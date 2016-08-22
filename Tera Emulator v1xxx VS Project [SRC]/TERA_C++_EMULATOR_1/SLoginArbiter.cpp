@@ -27,9 +27,11 @@ void SLoginArbiter::Process(OpCode opCode, Stream * stream, Client * caller)
 	{
 		
 		Account * a = PlayerService::GetAccount(result);
-		if (a)
+		if (a && !a->_loggedIn)
 		{
+			a->_loggedIn = true;
 			caller->_account = a;
+
 			stream->Clear();
 
 			
@@ -74,6 +76,7 @@ void SLoginArbiter::Process(OpCode opCode, Stream * stream, Client * caller)
 
 			caller->Send(stream);
 			stream->Clear();
+
 
 		}
 		else

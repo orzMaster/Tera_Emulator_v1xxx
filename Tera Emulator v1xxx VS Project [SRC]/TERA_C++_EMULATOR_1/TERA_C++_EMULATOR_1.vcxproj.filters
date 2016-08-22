@@ -99,6 +99,9 @@
     <Filter Include="Resources">
       <UniqueIdentifier>{4cd7590d-6def-4e83-b34e-d3d596a930f0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Server\Resolutions\Chat">
+      <UniqueIdentifier>{3515429b-9e13-4e9e-a568-6170812aed0f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -382,6 +385,9 @@
     </ClCompile>
     <ClCompile Include="ToSendPacket.cpp">
       <Filter>Server\DataStructs</Filter>
+    </ClCompile>
+    <ClCompile Include="RChat.cpp">
+      <Filter>Server\Resolutions\Chat</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -678,6 +684,12 @@
     </ClInclude>
     <ClInclude Include="ToSendPacket.h">
       <Filter>Server\DataStructs</Filter>
+    </ClInclude>
+    <ClInclude Include="ChatEnum.h">
+      <Filter>Server\Enums</Filter>
+    </ClInclude>
+    <ClInclude Include="RChat.h">
+      <Filter>Server\Resolutions\Chat</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

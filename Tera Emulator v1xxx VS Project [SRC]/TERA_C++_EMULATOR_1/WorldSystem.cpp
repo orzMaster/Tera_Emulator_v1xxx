@@ -177,6 +177,26 @@ const bool WorldSystem::EnterWorld(Client * player)
 	return false;
 }
 
+void WorldSystem::ExitWorld(Client * player)
+{
+	Area * a = nullptr;
+	for (int i = 0; i < _areas.size(); i++)
+	{
+		if (_areas[i] && _areas[i]->_startPosition->_areaId == player->_account->_selectedPlayer->_position->_areaId)
+		{
+			a = _areas[i];
+			break;
+		}
+	}
+	if (a)
+	{
+		while (!a->Lock())
+			continue;
+		a->ExitArea(player);
+		a->Unlock();
+	}
+}
+
 void WorldSystem::StartSystem()
 {
 	for (size_t i = 0; i < _areas.size(); i++)
@@ -301,31 +321,38 @@ void WorldSystem::Main(Area * instance)
 		{
 			if (instance->_clients[i] && instance->_clients[i]->_account)
 			{
-				Player * me = instance->_clients[i]->_account->_selectedPlayer;
-				Player * you = 0;
-				for (size_t j = 0; j < instance->_clients.size(); j++)
+				try
 				{
-					if (instance->_clients[j] != instance->_clients[i])
+					Player * me = instance->_clients[i]->_account->_selectedPlayer;
+					Player * you = 0;
+					for (size_t j = 0; j < instance->_clients.size(); j++)
 					{
-						you = instance->_clients[j]->_account->_selectedPlayer;
+						if (instance->_clients[j] && instance->_clients[i] && instance->_clients[j] != instance->_clients[i])
+						{
+							you = instance->_clients[j]->_account->_selectedPlayer;
 
-						if (me->_currentVisitedSection == you->_currentVisitedSection) //if me and you are in same section,
-						{
-							if (!instance->_clients[i]->IsVisibleClient(instance->_clients[j]))
+							if (me->_currentVisitedSection == you->_currentVisitedSection) //if me and you are in same section,
 							{
-								instance->_clients[i]->AddVisibleClient(instance->_clients[j]); //add you to me [spawn]
-								instance->_clients[j]->AddVisibleClient(instance->_clients[i]); //add me to you [spawn]
+								if (!instance->_clients[i]->IsVisibleClient(instance->_clients[j]))
+								{
+									instance->_clients[i]->AddVisibleClient(instance->_clients[j]); //add you to me [spawn]
+									instance->_clients[j]->AddVisibleClient(instance->_clients[i]); //add me to you [spawn]
+								}
 							}
-						}
-						else if (me->_currentVisitedSection != you->_currentVisitedSection) //if me/you just leved section
-						{
-							if (instance->_clients[i]->IsVisibleClient(instance->_clients[j]))
+							else if (me->_currentVisitedSection != you->_currentVisitedSection) //if me/you just leved section
 							{
-								instance->_clients[i]->RemoveVisibleClient(instance->_clients[j]); //remove you from me [despwn]
-								instance->_clients[j]->RemoveVisibleClient(instance->_clients[i]); //remove me from you [despwn]
+								if (instance->_clients[i]->IsVisibleClient(instance->_clients[j]))
+								{
+									instance->_clients[i]->RemoveVisibleClient(instance->_clients[j]); //remove you from me [despwn]
+									instance->_clients[j]->RemoveVisibleClient(instance->_clients[i]); //remove me from you [despwn]
+								}
 							}
 						}
 					}
+				}
+				catch (void *)
+				{
+					instance->_clients[i] = 0;
 				}
 			}
 			else

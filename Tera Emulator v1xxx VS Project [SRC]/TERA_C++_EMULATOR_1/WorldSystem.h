@@ -19,7 +19,7 @@ public:
 	static const bool InitializeWorldSystem(const char* areasFilePath, const char * creaturesFilePath, const char* objectsFilePath);
 
 	static const bool EnterWorld(Client* player);
-
+	static void ExitWorld(Client * player);
 
 	static void StartSystem();
 	static void ShutdownSystem();

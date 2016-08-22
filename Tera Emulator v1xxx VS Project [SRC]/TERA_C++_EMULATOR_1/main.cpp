@@ -5,7 +5,7 @@
 #include "EntityService.h"
 
 int main() {
-	SetConsoleTitle(L"Tera Emulator v1030");
+	SetConsoleTitle(L"Tera Emulator v1036");
 	HANDLE _handler = GetStdHandle(STD_OUTPUT_HANDLE);
 	COORD dc = COORD();
 	dc.X = 1024;
@@ -58,6 +58,7 @@ int main() {
 		}
 	}
 
+	_server->Shutdown();
 
 	delete _server;
 	_server = 0;

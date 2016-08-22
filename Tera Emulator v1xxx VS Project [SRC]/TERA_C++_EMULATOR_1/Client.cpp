@@ -38,6 +38,8 @@ Client::~Client()
 
 void Client::Close()
 {
+	_run = false;
+	_opened = false;
 	shutdown(_socket, SD_BOTH);
 	closesocket(_socket);
 }
@@ -104,7 +106,8 @@ void Client::Run(Client * instance, Server* server)
 
 	PlayerService::SaveAccountData(instance->_account);
 	std::cout << "Client disconnected! EntityID[" << instance->_entityId << "] err?[" << err << "]\n";
-
+	
+	instance->_account->_loggedIn = false;
 	server->EndConnection(instance);
 }
 void Client::Recevie(Client * instance)
@@ -142,7 +145,7 @@ void Client::Recevie(Client * instance)
 const bool Client::ProcessData(Client *  instance, TeraPacket* packet, Stream * processStream)
 {
 	instance->Dump(packet->_raw, packet->_size, true);//logs hex text data to recvDump.txt
-	std::cout << ">" << ServerUtils::HexString(packet->_raw, packet->_size) << std::endl;//------------DEBUGs
+	//std::cout << ">" << ServerUtils::HexString(packet->_raw, packet->_size) << std::endl;//------------DEBUGs
 
 
 	SendPacket* toSend = OpCodes::Get((packet->_opCode[0] << 8) | packet->_opCode[1]);
@@ -206,140 +209,142 @@ void Client::RemoveVisibleClient(Client * c)
 void Client::AddVisibleClient(Client * c)
 {
 	Player * p = _account->_selectedPlayer;
-	Stream s = Stream();
-	s.WriteInt16(0);
-	s.WriteInt16(S_SPAWN_USER);
+	Stream* data = new  Stream();
+	data->WriteInt16(0);
+	data->WriteInt16(S_SPAWN_USER);
 
-	s.WriteInt16(0);
-	short iconPosition = s._pos;
-	s.WriteInt16(0);
-	s.WriteInt16(0);
-	short namePos = s._pos;
-	s.WriteInt16(0);
-	short guildPos = s._pos;
-	s.WriteInt16(0);
-	s.WriteInt16(0);
-	short details1Pos = s._pos;
-	s.WriteInt16(0);
-	s.WriteInt16(32);
-	short guildTitleAndEmblemePos = s._pos;
-	s.WriteInt16(0);
-	s.WriteInt16(0);
-	short details2Pos = s._pos;
-	s.WriteInt16(0);
-	s.WriteInt16(64);
-
-	s.WriteInt64(_account->_selectedPlayer->_entityId);
-	s.WriteInt64(_entityId);
-
-	s.WriteFloat(p->_position->_X);
-	s.WriteFloat(p->_position->_Y);
-	s.WriteFloat(p->_position->_Z);
-	s.WriteInt16(p->_position->_heading);
-
-	s.WriteInt32(0); //relation ?? enemy / party member ...
-	s.WriteInt32(p->_model);
-	s.WriteInt16(0); //allawys 0?
-	s.WriteInt16(0); //unk2
-	s.WriteInt16(0); //unk3
-	s.WriteInt16(0); //unk4 allways 0?
-	s.WriteInt16(0); //unk5 0-3 ?
-
-	s.WriteByte(1);
-	s.WriteByte(1); //alive?
-
-	s.Write(p->_data, 8);
-
-	s.WriteInt32(p->_playerWarehouse->weapon);
-	s.WriteInt32(p->_playerWarehouse->armor);
-	s.WriteInt32(p->_playerWarehouse->gloves);
-	s.WriteInt32(p->_playerWarehouse->boots);
-	s.WriteInt32(p->_playerWarehouse->innerWare);
-	s.WriteInt32(p->_playerWarehouse->skin1);
-	s.WriteInt32(p->_playerWarehouse->skin2);
-
-	s.WriteInt32(0); //unk 0-1-3 ??
-	s.WriteInt32(0);
-	s.WriteInt32(0);
-	s.WriteInt32(0);
-	s.WriteInt32(0);
-	s.WriteInt32(0);
-
-	s.WriteByte(0); //allaways 0?
-
-	s.WriteInt32(0);	  //skins?
-	s.WriteInt32(0);	  //skins?
-	s.WriteInt32(0);	  //skins?
-	s.WriteInt32(0);	  //skins?
-
-	s.WriteInt32(0);		//dyes
-	s.WriteInt32(0);		//dyes
-	s.WriteInt32(0);		//dyes
-	s.WriteInt32(0);		//dyes
-
-	s.WriteInt32(0);	  //unk s
-	s.WriteInt32(0);	  //unk s
-	s.WriteInt32(0);	  //unk s
-	s.WriteInt32(0);	  //unk s
-	s.WriteInt32(0);	  //unk s
-
-	s.WriteInt32(2); //weapon enchant ??
-	s.WriteInt16(0); //unk27 # always 0?
-
-	s.WriteInt32(p->_level);
-
-	s.WriteInt32(0);   //always 0?
-	s.WriteInt32(0);   //always 0?
-
-	s.WriteByte(0); //unk boolean?
-
-	s.WriteInt32(0);
-	s.WriteInt32(0);
-	s.WriteInt32(0);
-	s.WriteInt32(0);
-	s.WriteInt32(p->_playerSkinWarehouse->bodySkin);
-	s.WriteInt32(0); //costumeDye # ?
-
-	s.WriteInt32(0);
-	s.WriteInt32(0);
-
-	s.WriteByte(0); //boolean?
-
-	s.WriteInt32(0);
-	s.WriteInt32(0);
-	s.WriteInt32(0);
-
-	s.WriteByte(1); //boolean?
-
-	s.WriteInt32(0);
-	s.WriteInt32(0);
-	s.WriteInt32(0);
-
-	s.WriteFloat(1.0f); //allways 1.0f?
-
-	s.WritePos(namePos);
-	s.WriteString(p->_name);
-
-	s.WritePos(guildPos);
-	s.WriteInt16(0);
-	s.WritePos(guildPos + 4);
-	s.WriteInt16(0);
-
-	s.WritePos(details1Pos);
-	s.Write(p->_details1, 32);
+	data->WriteInt64(0);
 
 
-	s.WritePos(guildTitleAndEmblemePos);
-	s.WriteInt16(0);
-	s.WritePos(guildTitleAndEmblemePos + 4);
-	s.WriteInt16(0);
 
-	s.WritePos(details2Pos);
-	s.Write(p->_details2, 64);
+	short namePos = data->NextPos();
+	short guildNamePos = data->NextPos();
+	short Title = data->NextPos();
 
-	s.WritePos(0); //size
-	BroadcastSystem::Broadcast(this, &s, ME, 0);
-	s.Clear();
+	short details1Pos = data->NextPos();
+	data->WriteInt16(32);
+
+	short gTitlePos = data->NextPos();
+	short gTitleIconPos = data->NextPos();
+
+	short details2Pos = data->NextPos();
+	data->WriteInt16(64);
+
+	data->WriteInt64(_account->_selectedPlayer->_entityId + 1);
+	data->WriteInt64(_entityId + 1);
+
+	data->WriteFloat(p->_position->_X + 10);
+	data->WriteFloat(p->_position->_Y + 10);
+	data->WriteFloat(p->_position->_Z + 10);
+	data->WriteInt16(p->_position->_heading);
+
+	data->WriteInt32(0); //relation ?? enemy / party member ...
+	data->WriteInt32(p->_model);
+	data->WriteInt16(0); //allawys 0?
+	data->WriteInt16(0); //unk2
+	data->WriteInt16(0); //unk3
+	data->WriteInt16(0); //unk4 allways 0?
+	data->WriteInt16(0); //unk5 0-3 ?
+
+	data->WriteByte(1);
+	data->WriteByte(1); //alive?
+
+	data->Write(p->_data, 8);
+
+	data->WriteInt32(p->_playerWarehouse->weapon);
+	data->WriteInt32(p->_playerWarehouse->armor);
+	data->WriteInt32(p->_playerWarehouse->gloves);
+	data->WriteInt32(p->_playerWarehouse->boots);
+	data->WriteInt32(p->_playerWarehouse->innerWare);
+	data->WriteInt32(p->_playerWarehouse->skin1);
+	data->WriteInt32(p->_playerWarehouse->skin2);
+
+	data->WriteInt32(0); //unk 0-1-3 ??
+	data->WriteInt32(0); //mount...
+	data->WriteInt32(7); //7 ???
+	data->WriteInt32(0); // Title id
+
+
+
+	data->WriteInt64(0);
+
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+
+	data->WriteInt32(0);	  //unk s
+	data->WriteInt16(0);
+	data->WriteByte(0); //allaways 0?
+
+	data->WriteByte(0);		  //enchants ??
+	data->WriteByte(0);		  //enchants ??
+	data->WriteByte(0);		  //enchants ??
+	data->WriteByte(0);		  //enchants ??
+
+	data->WriteByte(0);
+	data->WriteByte(0);
+
+	data->WriteInt16(p->_level);
+
+	data->WriteInt16(0);   //always 0?
+	data->WriteInt32(0);   //always 0?
+	data->WriteInt32(0);
+	data->WriteByte(0); //unk boolean?
+
+	data->WriteInt32(0);	//skins ?
+	data->WriteInt32(0);	//skins ?
+	data->WriteInt32(0);	//skins ?
+	data->WriteInt32(0);	//skins ?
+	data->WriteInt32(0);	//skins ?
+	data->WriteInt32(0); //costumeDye # ?
+
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+
+	data->WriteByte(0); //boolean?
+
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+
+	data->WriteByte(1); //boolean?
+	data->WriteInt32(0);
+
+	data->WriteFloat(1.0f); //allways 1.0f?
+
+	data->WritePos(namePos);
+	data->WriteString(p->_name);
+
+	data->WritePos(guildNamePos);
+	data->WriteInt16(0);
+	data->WritePos(Title);
+	data->WriteInt16(0);
+
+	data->WritePos(details1Pos);
+	data->Write(p->_details1, 32);
+
+
+	data->WritePos(gTitlePos);
+	data->WriteInt16(0);
+	data->WritePos(gTitleIconPos);
+	data->WriteInt16(0);
+
+	data->WritePos(details2Pos);
+	data->Write(p->_details2, 64);
+
+	data->WritePos(0); //size
+	Send(data);
+	data->Clear();
+
+	delete data;
+	data = 0;
 
 	_visibleClients.push_back(c);
 }
@@ -347,7 +352,7 @@ void Client::AddVisibleClient(Client * c)
 const bool Client::Send(byte * data, unsigned int length)
 {
 	Dump(data, length, false); //logs hex text data to sendDump.txt
-	std::cout << "<" << ServerUtils::HexString(data, length) << std::endl;//------------DEBUG
+	//std::cout << "<" << ServerUtils::HexString(data, length) << std::endl;//------------DEBUG
 
 	_sendMutex.lock();
 

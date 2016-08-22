@@ -27,6 +27,7 @@ public:
 	std::string _email;
 	int _lasOnlineUtc;
 	bool _isGm;
+	bool _loggedIn;
 	int _id;
 	short _coins;
 	int _playerCount;

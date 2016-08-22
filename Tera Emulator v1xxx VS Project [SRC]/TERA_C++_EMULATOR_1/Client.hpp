@@ -30,6 +30,7 @@ class Client : public Entity
 	friend class WorldSystem;
 	friend class BroadcastSystem;
 	friend class SendPacket;
+	friend class Server;
 public:
 	Client(SOCKET socket, sockaddr_in sockData, Server* server);
 	~Client();

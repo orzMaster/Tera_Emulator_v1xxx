@@ -33,7 +33,7 @@ void RGetPlayerList::Process(OpCode opCode, Stream * stream, Client * caller)
 	stream->WriteInt32(24);	//unk
 
 	int location = 0; int next = 0;
-	//size 435 bytes [each player]
+	
 	for (size_t i = 0; i < caller->_account->_playerList.size(); i++)
 	{
 		Player * p = caller->_account->_playerList[i];

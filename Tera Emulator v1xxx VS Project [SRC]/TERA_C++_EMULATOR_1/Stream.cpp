@@ -131,6 +131,12 @@ void Stream::Read(byte * out_buffer, unsigned int size)
 	_pos += size;
 }
 
+unsigned short Stream::NextPos()
+{
+	WriteInt16(0);
+	return _pos;
+}
+
 short Stream::ReadInt16()
 {
 	if (_pos > _size - 2)

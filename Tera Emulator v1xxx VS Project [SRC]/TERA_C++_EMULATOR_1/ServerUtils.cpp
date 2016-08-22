@@ -46,3 +46,22 @@ void ServerUtils::UndoEscapedData(byte * data, unsigned size)
 	}
 }
 
+bool ServerUtils::StringStartsWith(std::string a, std::string with)
+{
+	if (a.size() < with.size())
+		return false;
+	if (with.size() == 0)
+		return true;
+
+	
+	for (size_t i = 0; i < with.size(); i++)
+	{
+		if (a[i] != with[i])
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+

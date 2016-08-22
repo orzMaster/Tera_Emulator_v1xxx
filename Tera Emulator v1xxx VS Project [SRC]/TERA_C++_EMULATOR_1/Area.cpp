@@ -140,16 +140,17 @@ void Area::EnterArea(Client * client)
 
 void Area::ExitArea(Client * client)
 {
-	if (!client->IsLocked())
-		return;
-
-	//todo add exit area logic here
+	for (size_t i = 0; i < _clients.size(); i++)
+	{
+		if (_clients[i]->IsVisibleClient(client))
+			_clients[i]->RemoveVisibleClient(client);
+	}
 
 	for (size_t i = 0; i < _clients.size(); i++)
 	{
 		if (_clients[i] == client)
 		{
-			_clients.erase(_clients.begin() + i);
+			_clients[i] = 0;
 			break;
 		}
 	}

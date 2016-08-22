@@ -5,3 +5,4 @@
 root
 root
 tera_q
+autostart = 1

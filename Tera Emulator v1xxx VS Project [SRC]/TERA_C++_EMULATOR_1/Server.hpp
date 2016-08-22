@@ -24,6 +24,7 @@ private:
 		unsigned int port;
 		unsigned int maxClients;
 		bool isValid;
+		bool autoStart;
 
 		std::string mysqlHostAddress;
 		std::string mysqlUsername;

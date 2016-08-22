@@ -196,6 +196,7 @@
     <ClCompile Include="RCancelSkill.cpp" />
     <ClCompile Include="RCanCreatePlayer.cpp" />
     <ClCompile Include="RChangeUserLobbySlotId.cpp" />
+    <ClCompile Include="RChat.cpp" />
     <ClCompile Include="RCheckUsername.cpp" />
     <ClCompile Include="RCreatePlayer.cpp" />
     <ClCompile Include="2DRectangle.cpp" />
@@ -255,6 +256,7 @@
     <ClInclude Include="Account.hpp" />
     <ClInclude Include="Area.h" />
     <ClInclude Include="BroadcastService.h" />
+    <ClInclude Include="ChatEnum.h" />
     <ClInclude Include="ChatSystem.h" />
     <ClInclude Include="Client.hpp" />
     <ClInclude Include="Climb.h" />
@@ -294,6 +296,7 @@
     <ClInclude Include="RCancelSkill.h" />
     <ClInclude Include="RCanCreatePlayer.h" />
     <ClInclude Include="RChangeUserLobbySlotId.h" />
+    <ClInclude Include="RChat.h" />
     <ClInclude Include="RCheckUsername.h" />
     <ClInclude Include="RCreatePlayer.h" />
     <ClInclude Include="2DRectangle.h" />

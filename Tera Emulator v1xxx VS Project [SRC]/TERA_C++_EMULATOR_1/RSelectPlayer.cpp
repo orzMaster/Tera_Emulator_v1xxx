@@ -18,7 +18,7 @@ RSelectPlayer::RSelectPlayer() : SendPacket(C_SELECT_USER)
 
 void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)
 {
-	std::cout << ">" << ServerUtils::HexString(data->_raw, data->_size) << std::endl;//------------DEBUGs
+	
 	int lobbyId = data->ReadInt32();
 	Player * p = caller->_account->GetPlayer(lobbyId);
 	bool result = !p ? false : true;
@@ -79,10 +79,11 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)
 	//data->WriteInt16(32768);   //unk 0x0080
 	//data->WriteInt16(256);     //unk 0x0001
 
-	data->WriteInt64(p->_entityId);
+	data->WriteInt32(caller->_entityId);
+	data->WriteInt32(caller->_account->_selectedPlayer->_entityId);
 
 	data->WriteInt32(SERVER_ID); //server id
-	data->WriteInt32((int)p->_lobbyId);
+	data->WriteInt32(0);
 
 	
 	data->WriteInt32(0); 
@@ -134,7 +135,7 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)
 
 	data->WriteInt64(191429903); //unk16 // 0FFD680B
 
-	data->WriteInt32(1); //weaponModel
+	data->WriteInt32(0); //weaponModel
 	data->WriteInt32(0); //chestModel
 	data->WriteInt32(0); //glovesModel
 	data->WriteInt32(0); //bootsModel
@@ -164,7 +165,7 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)
 	data->WriteInt32(0);
 	data->WriteInt16(0);
 
-	data->WriteByte(0);
+	data->WriteByte(1);
 
 	data->WriteInt32(0);  //armor skin
 	data->WriteInt32(0); 	//skins ??
@@ -239,7 +240,8 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)
 	data->WriteInt16(S_NPCGUILD_LIST);
 	data->WriteInt16(0); //npc guild count [faction]
 	short unk_pos = data->_pos;
-	data->WriteInt64(p->_entityId);
+	data->WriteInt32(caller->_entityId);
+	data->WriteInt32(p->_entityId);
 	data->WritePos(unk_pos);
 	data->WriteInt32(0); //region
 	data->WriteInt32(0); //faction

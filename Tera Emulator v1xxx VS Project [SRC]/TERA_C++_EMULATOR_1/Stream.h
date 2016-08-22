@@ -39,6 +39,7 @@ public:
 	void WriteInt64(int64_t value);
 	void WritePos(short s, short offset = 0);
 	void Read(byte* out_buffer, unsigned int size);
+	unsigned short  NextPos();
 	short ReadInt16();
 	int  ReadInt32();
 	float ReadFloat();

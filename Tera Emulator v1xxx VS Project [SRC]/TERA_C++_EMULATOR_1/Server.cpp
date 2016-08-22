@@ -51,6 +51,7 @@
 #include "RNotifyLocationInAction.h"
 #include "RRequestGameStatPing.h"
 #include "RExit.h"
+#include "RChat.h"
 
 
 Server::Server()
@@ -228,6 +229,7 @@ const bool Server::Initialize()
 	OpCodes::Add(new RCancelSkill());
 	OpCodes::Add(new RNotifyLocationInAction());
 	OpCodes::Add(new RRequestGameStatPing());
+	OpCodes::Add(new RChat());
 
 
 	std::cout << ">Initialized [" << OpCodes::Count() << "] OpCodes Resolutions. Revision[4605]" << "   secods[" << ServerTimer::GetTime().totalTime << "]\n\n";
@@ -257,6 +259,18 @@ const bool Server::Initialize()
 	std::cout << ">Listener initialized on IP [" << _serverConfig.ip << "] PORT[" << _serverConfig.port << "]..." << "   secods[" << ServerTimer::GetTime().totalTime << "]\n\n";
 
 	std::cout << ">Server Initialized. Ready to start!" << "   secods[" << ServerTimer::GetTime().totalTime << "]\n\n\n\n\n\n";
+
+	if (_serverConfig.autoStart)
+	{
+		std::cout << ">Server auto-start!\n\n";
+		if (!Run())
+		{
+			std::cout << ">Server start attempt failed!\n\n";
+			return false;
+		}
+	}
+
+
 	return true;
 }
 
@@ -325,8 +339,10 @@ void Server::EndConnection(Client * c)
 	{
 		if (_clients[i] && _clients[i] == c)
 		{
+			if (_clients[i]->_opened)
+				_clients[i]->Close();
 
-			_clients[i]->Close();
+			WorldSystem::ExitWorld(_clients[i]);
 
 			delete _clients[i];
 			_clients[i] = 0;
@@ -374,6 +390,12 @@ Server::Config Server::LoadConfigFromFile(const char * file)
 
 		std::getline(f, line);
 		out.database = line.c_str();
+
+		int autoStartVal = 0;
+		std::getline(f, line);
+		sscanf_s(line.c_str(), "autostart = %d", &autoStartVal);
+		out.autoStart = (bool)autoStartVal;
+
 
 		out.isValid = true;
 	}

@@ -16,6 +16,7 @@ Account::Account()
 	_accountSettings = 0;
 	_accountSettingsSize = 0;
 	_lastLobbyId = 0;
+	_loggedIn = false;
 }
 
 Account::~Account()

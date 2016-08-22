@@ -16,5 +16,6 @@ public:
 	static unsigned char HexCharToByteChar(const char *s);
 	static byte* HexStringToByteArray(std::string str);
 	static void UndoEscapedData(byte* data, unsigned size);
-};
+	static bool StringStartsWith(std::string a, std::string with);
+};;
 #endif

@@ -144,12 +144,13 @@ void RLoadTopoFin::Process(OpCode opCode, Stream * data, Client * caller)
 	data->WriteInt16(0);
 	data->WriteInt16(S_SPAWN_ME);
 
-	data->WriteInt64(caller->_account->_selectedPlayer->_entityId);
+	data->WriteInt32(caller->_entityId);
+	data->WriteInt32(caller->_account->_selectedPlayer->_entityId);
 	data->WriteFloat(caller->_account->_selectedPlayer->_position->_X);
 	data->WriteFloat(caller->_account->_selectedPlayer->_position->_Y);
 	data->WriteFloat(caller->_account->_selectedPlayer->_position->_Z);
-	data->WriteInt16(caller->_account->_selectedPlayer->_position->_heading); //velika
-	data->WriteInt16(caller->_account->_selectedPlayer->_stats->_currentHp > 0 ? 1 : 0); //alive
+	data->WriteInt16(caller->_account->_selectedPlayer->_position->_heading);
+	data->WriteInt16(caller->_account->_selectedPlayer->_stats->_currentHp > 0 ? 1 : 0); 
 	data->WritePos(0);
 	caller->Send(data);
 	data->Clear();
@@ -243,4 +244,140 @@ void RLoadTopoFin::Process(OpCode opCode, Stream * data, Client * caller)
 
 
 	WorldSystem::EnterWorld(caller);
+
+
+
+	data->Clear();
+	data->WriteInt16(0);
+	data->WriteInt16(S_SPAWN_USER);
+
+	data->WriteInt64(0);
+
+
+	
+	short namePos = data->NextPos();
+	short guildNamePos = data->NextPos();
+	short Title = data->NextPos();
+
+	short details1Pos = data->NextPos();
+	data->WriteInt16(32);
+	
+	short gTitlePos = data->NextPos();
+	short gTitleIconPos = data->NextPos();
+
+	short details2Pos = data->NextPos();
+	data->WriteInt16(64);
+
+	data->WriteInt64(caller->_account->_selectedPlayer->_entityId +1);
+	data->WriteInt64(caller->_entityId +1);
+
+	data->WriteFloat(p->_position->_X + 10);
+	data->WriteFloat(p->_position->_Y +10);
+	data->WriteFloat(p->_position->_Z +10);
+	data->WriteInt16(p->_position->_heading);
+
+	data->WriteInt32(0); //relation ?? enemy / party member ...
+	data->WriteInt32(p->_model);
+	data->WriteInt16(0); //allawys 0?
+	data->WriteInt16(0); //unk2
+	data->WriteInt16(0); //unk3
+	data->WriteInt16(0); //unk4 allways 0?
+	data->WriteInt16(0); //unk5 0-3 ?
+
+	data->WriteByte(1);
+	data->WriteByte(1); //alive
+
+	data->Write(p->_data, 8);
+
+	data->WriteInt32(p->_playerWarehouse->weapon);
+	data->WriteInt32(p->_playerWarehouse->armor);
+	data->WriteInt32(p->_playerWarehouse->gloves);
+	data->WriteInt32(p->_playerWarehouse->boots);
+	data->WriteInt32(p->_playerWarehouse->innerWare);
+	data->WriteInt32(p->_playerWarehouse->skin1);
+	data->WriteInt32(p->_playerWarehouse->skin2);
+
+	data->WriteInt32(0); //unk 0-1-3 ??
+	data->WriteInt32(0); //mount...
+	data->WriteInt32(7); //7 ???
+	data->WriteInt32(0); // Title id
+	
+
+
+	data->WriteInt64(0);
+
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+
+	data->WriteInt32(0);	  //unk s
+	data->WriteInt16(0);
+	data->WriteByte(0); //allaways 0?
+
+	data->WriteByte(13);		  //enchants ??
+	data->WriteByte(0);		  //enchants ??
+	data->WriteByte(0);		  //enchants ??
+	data->WriteByte(0);		  //enchants ??
+
+	data->WriteByte(0);
+	data->WriteByte(0);
+
+	data->WriteInt16(p->_level);
+
+	data->WriteInt16(0);   //always 0?
+	data->WriteInt32(0);   //always 0?
+	data->WriteInt32(0);
+	data->WriteByte(1); //unk boolean?
+
+	data->WriteInt32(0);	//skins ?
+	data->WriteInt32(0);	//skins ?
+	data->WriteInt32(0);	//skins ?
+	data->WriteInt32(0);	//skins ?
+	data->WriteInt32(0);	//skins ?
+	data->WriteInt32(0); //costumeDye # ?
+
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+
+	data->WriteByte(1); //boolean?
+
+	data->WriteInt32(1);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+
+	data->WriteByte(1); //boolean?
+	data->WriteInt32(0);
+
+	data->WriteFloat(1.0f); //allways 1.0f?
+
+	data->WritePos(namePos);
+	data->WriteString(p->_name);
+
+	data->WritePos(guildNamePos);
+	data->WriteInt16(0);
+	data->WritePos(Title);
+	data->WriteInt16(0);
+
+	data->WritePos(details1Pos);
+	data->Write(p->_details1, 32);
+
+
+	data->WritePos(gTitlePos);
+	data->WriteInt16(0);
+	data->WritePos(gTitleIconPos);
+	data->WriteInt16(0);
+
+	data->WritePos(details2Pos);
+	data->Write(p->_details2, 64);
+
+	data->WritePos(0); //size
+	caller->Send(data);
+	data->Clear();
 }
