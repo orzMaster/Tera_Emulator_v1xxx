@@ -15,3 +15,5 @@ To compile it, you need:
       v1035
       -New OpCode system update
       -more stabile
+      v1036
+      -autostart added [see config file]
