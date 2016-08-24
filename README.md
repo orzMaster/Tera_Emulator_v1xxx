@@ -1,9 +1,8 @@
 # Tera_Emulator_v1xxx
 This is a WIP[Work in progress].
 
-To compile it, you need:
-      -boost code
-      -mysql code
+      To compile it, you need:
+      -boost code [http://www.boost.org/users/history/version_1_61_0.html]
 
       v1010
       v1020
