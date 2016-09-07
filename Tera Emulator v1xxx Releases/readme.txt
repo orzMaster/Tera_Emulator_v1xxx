@@ -24,3 +24,33 @@ to start server you need
  -start Tera Emulator v1030 -> ./start
  -start tera through teraLuncher.exe 'admin','admin'
 
+ v1040=>
+	confing file edited. added [playerStartContinentId = 5] 
+	added world.config file in Config// folder, holds the areas to start [visitable areas]
+
+		
+	finished [items][skills][passivities][abnormalities] loaders
+	
+	made basic inventory system
+		-!!! 1 bug [after opening Profile(in game) the inventory won't open]
+	made basic world functions [players are visible to eachother depending on theyr currentContinent & 	current visitedSection & visibelRangeVar
+	
+
+	chat not ready.
+		-> added chat admin commands
+			-[./additem %itemId%]
+			-[./addgold %ammount%]
+			-[./sysmsg %msgId%]
+			-[./exit] to disconnect from server
+			-[./cleargold]
+			-[./expandinventory] expands inventory by 8 slots
+	main server window
+		->commands:
+			-[./start] to start server
+			-[./stop] to disconenct all clients and close all areas 
+			-[./cls] clear console buffer
+			-[./inf] server basic info ::connectedClientsCount, ::startedAreasCount
+			-[./asc] ads continentId to [toStartAreasList] [only when server is stopped , not running]
+			-[./close] close client by entityId
+
+	still a WIP, so...
