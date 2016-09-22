@@ -9,6 +9,8 @@
 #include <cppconn\resultset.h>
 #include <cppconn\statement.h>
 #include <cppconn\datatype.h>
+#include <cppconn\prepared_statement.h>
+
 
 #define MAX_CLIENTS_PER_CONNECTION 50
 
@@ -24,8 +26,11 @@ public:
 	const bool initDriver(const char* hostAddress, const char* hostUsername, const char * hostPassword, const char* databaseName);
 
 	sql::ResultSet* ExecuteQuery(const char* query);
-	int ExecuteNonQuery(const char* querry);
+	int ExecuteNonQuery(const char* query);
+	bool ExecuteUpdate(const char* query);
 	void InsertBlob(std::istream * blob);
+
+	sql::PreparedStatement * GetPreparedStatement(std::string query);
 	const bool Lock();
 	const bool Unlock();
 
@@ -33,9 +38,10 @@ private:
 	void ReleaseStatement();
 
 
-	sql::mysql::MySQL_Driver * _driver; 
+	sql::Driver * _driver; 
 	sql::Connection * _connection; 
 	sql::Statement *_statement; 
+	sql::PreparedStatement * _prepStatement;
 
 	bool _isValid = false;
 

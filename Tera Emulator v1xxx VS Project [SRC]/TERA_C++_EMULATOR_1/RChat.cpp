@@ -1,30 +1,39 @@
 #include "RChat.h"
-
 #include "ChatEnum.h"
+#include "Inventory.h"
+#include "Area.h"
+#include "MessagingSystem.h"
+#include "Server.hpp"
+#include "CreatureStats.h"
+#include "ItemEnum.h"
+#include "PassivityService.h"
+#include "PassivitySystem.h"
+#include "StatsService.h"
 
 RChat::RChat() : SendPacket(C_CHAT)
 {
 }
 
-
-RChat::~RChat()
+void RChat::Process(OpCode opCode, Stream * data, Client * caller) const
 {
-}
+	Player * p = caller->GetSelectedPlayer();
+	if (!p)
+		return;
 
-void RChat::Process(OpCode opCode, Stream * data, Client * caller)
-{
-	short nameOffset = data->ReadInt16();
+	short textOffset = data->ReadInt16();
 	ChatType type = (ChatType)data->ReadInt16();
 
-	data->_pos = nameOffset - 4;
-	std::string text = data->ReadReceivedString();
+	data->_pos = textOffset;
+	std::string text = data->ReadUTF16StringBigEdianToASCII();
 	std::string message = "";
+
+
 	if (text.size() > 12)
 		for (size_t i = 6; i < text.size() - 7; i++)
 		{
 			message += text[i];
 		}
-	if (message != "")
+	if (message != "" && ServerUtils::StringStartsWith(message, "./"))
 	{
 		if (ServerUtils::StringStartsWith(message, "./spawn"))
 		{
@@ -41,180 +50,172 @@ void RChat::Process(OpCode opCode, Stream * data, Client * caller)
 
 			return;
 		}
-		else if (ServerUtils::StringStartsWith(message, "./spme"))
+		else if (ServerUtils::StringStartsWith(message, "./setlevel"))
 		{
-#pragma region SPAWN_ME
+			int level = 0;
+			sscanf_s(message.c_str(), "./setlevel %d", &level);
+			p->_stats._level = level;
+			StatsService::SendPlayerStats(caller);
+		}
+		else if (ServerUtils::StringStartsWith(message, "./setmovespeed"))
+		{
+			int speed = 0;
+			sscanf_s(message.c_str(), "./setmovespeed %d", &speed);
+			p->_stats._movementSpeed = speed;
+			StatsService::SendPlayerStats(caller);
+		}
+		else if (ServerUtils::StringStartsWith(message, "./addgold"))
+		{
+			int gold = 0;
+			sscanf_s(message.c_str(), "./addgold %d", &gold);
+			p->_inventory->AddGold(gold);
+			p->_inventory->SendInventory(caller, 0);
+		}
+		else if (ServerUtils::StringStartsWith(message, "./expandinventory"))
+		{
+			int rows = 0;
+			sscanf_s(message.c_str(), "./expandinventory %d", &rows);
+			p->_inventory->ExpandInventory(rows);
+			p->_inventory->SendInventory(caller, 0);
+		}
+		else if (ServerUtils::StringStartsWith(message, "./cleargold"))
+		{
+			p->_inventory->ClearGold();
+			p->_inventory->SendInventory(caller, 0);
+		}
+		else if (ServerUtils::StringStartsWith(message, "./st"))
+		{
+			int status = 0; int val2 = 0; int last = 0;
+			sscanf_s(message.c_str(), "./st %d %d %d", &status, &val2, &last);
 
-			Player * p = caller->_account->_selectedPlayer;
+
 			data->Clear();
-			data->WriteInt16(0);
-			data->WriteInt16(S_SPAWN_USER);
-
-			data->WriteInt64(0);
-
-
-
-			short namePos = data->NextPos();
-			short guildNamePos = data->NextPos();
-			short Title = data->NextPos();
-
-			short details1Pos = data->NextPos();
-			data->WriteInt16(32);
-
-			short gTitlePos = data->NextPos();
-			short gTitleIconPos = data->NextPos();
-
-			short details2Pos = data->NextPos();
-			data->WriteInt16(64);
-
-			data->WriteInt64(caller->_account->_selectedPlayer->_entityId + 1);
-			data->WriteInt64(caller->_entityId + 1);
-
-			data->WriteFloat(p->_position->_X + 10);
-			data->WriteFloat(p->_position->_Y + 10);
-			data->WriteFloat(p->_position->_Z + 10);
-			data->WriteInt16(p->_position->_heading);
-
-			data->WriteInt32(0); //relation ?? enemy / party member ...
-			data->WriteInt32(p->_model);
-			data->WriteInt16(0); //allawys 0?
-			data->WriteInt16(0); //unk2
-			data->WriteInt16(0); //unk3
-			data->WriteInt16(0); //unk4 allways 0?
-			data->WriteInt16(0); //unk5 0-3 ?
-
-			data->WriteByte(1);
-			data->WriteByte(1); //alive
-
-			data->Write(p->_data, 8);
-
-			data->WriteInt32(p->_playerWarehouse->weapon);
-			data->WriteInt32(p->_playerWarehouse->armor);
-			data->WriteInt32(p->_playerWarehouse->gloves);
-			data->WriteInt32(p->_playerWarehouse->boots);
-			data->WriteInt32(p->_playerWarehouse->innerWare);
-			data->WriteInt32(p->_playerWarehouse->skin1);
-			data->WriteInt32(p->_playerWarehouse->skin2);
-
-			data->WriteInt32(0); //unk 0-1-3 ??
-			data->WriteInt32(0); //mount...
-			data->WriteInt32(7); //7 ???
-			data->WriteInt32(0); // Title id
-
-
-
-			data->WriteInt64(0);
-
-			data->WriteInt64(0);
-			data->WriteInt64(0);
-
-			data->WriteInt64(0);
-			data->WriteInt64(0);
-
-			data->WriteInt64(0);
-			data->WriteInt64(0);
-
-			data->WriteInt32(0);	  //unk s
-			data->WriteInt16(0);
-			data->WriteByte(0); //allaways 0?
-
-			data->WriteByte(13);		  //enchants ??
-			data->WriteByte(0);		  //enchants ??
-			data->WriteByte(0);		  //enchants ??
-			data->WriteByte(0);		  //enchants ??
-
-			data->WriteByte(0);
-			data->WriteByte(0);
-
-			data->WriteInt16(p->_level);
-
-			data->WriteInt16(0);   //always 0?
-			data->WriteInt32(0);   //always 0?
-			data->WriteInt32(0);
-			data->WriteByte(1); //unk boolean?
-
-			data->WriteInt32(0);	//skins ?
-			data->WriteInt32(0);	//skins ?
-			data->WriteInt32(0);	//skins ?
-			data->WriteInt32(0);	//skins ?
-			data->WriteInt32(0);	//skins ?
-			data->WriteInt32(0); //costumeDye # ?
-
-			data->WriteInt32(0);
-			data->WriteInt32(0);
-
-			data->WriteByte(1); //boolean?
-
-			data->WriteInt32(1);
-			data->WriteInt32(0);
-			data->WriteInt32(0);
-			data->WriteInt32(0);
-			data->WriteInt32(0);
-
-			data->WriteByte(1); //boolean?
-			data->WriteInt32(0);
-
-			data->WriteFloat(1.0f); //allways 1.0f?
-
-			data->WritePos(namePos);
-			data->WriteString(p->_name);
-
-			data->WritePos(guildNamePos);
-			data->WriteInt16(0);
-			data->WritePos(Title);
-			data->WriteInt16(0);
-
-			data->WritePos(details1Pos);
-			data->Write(p->_details1, 32);
-
-
-			data->WritePos(gTitlePos);
-			data->WriteInt16(0);
-			data->WritePos(gTitleIconPos);
-			data->WriteInt16(0);
-
-			data->WritePos(details2Pos);
-			data->Write(p->_details2, 64);
-
-			data->WritePos(0); //size
+			data->WriteInt16(19);
+			data->WriteInt16(S_USER_STATUS);
+			data->WriteInt32(p->_entityId);
+			data->WriteInt32(p->_subId);
+			data->WriteInt32(status);
+			data->WriteInt16(val2);
+			data->WriteByte(last);
 			caller->Send(data);
 			data->Clear();
-#pragma endregion
+
+			caller->Send(data);
 		}
-		else if(ServerUtils::StringStartsWith(message, "./exit"))
+		else if (ServerUtils::StringStartsWith(message, "./drop"))
+		{
+			int itemId = 0;
+			sscanf_s(message.c_str(), "./drop %d", &itemId);
+
+			WorldSystem::DropItem(caller, itemId);
+		}
+		else if (ServerUtils::StringStartsWith(message, "./rf"))
+		{
+			StatsService::SendPlayerStats(caller);
+		}
+		else if (ServerUtils::StringStartsWith(message, "./pf"))
+		{
+			data->Clear();
+
+			data->WriteInt16(22);
+			data->WriteInt16(S_PLAYER_CHANGE_ALL_PROF);
+			data->WriteInt32(0);
+			data->WriteInt32(0);
+			data->WriteInt32(0);
+			data->WriteInt32(0);
+			data->WriteInt16(0);
+
+			caller->Send(data);
+		}
+		else if (ServerUtils::StringStartsWith(message, "./cleardp"))
+		{
+			Area * ar = p->_currentArea;
+			ar->ClearDrop();
+		}
+		else if (ServerUtils::StringStartsWith(message, "./sysmsg"))
+		{
+			std::string msg = "";
+			for (size_t i = 8; i < message.size(); i++)
+				msg += message[i];
+			if (!ServerUtils::StringStartsWith(msg, "@"))
+				msg.insert(msg.begin(), '@');
+
+			MessagingSystem::SendSystemMessage(caller, msg);
+		}
+		else if (ServerUtils::StringStartsWith(message, "./dg"))
+		{
+			int type = 1;
+			sscanf_s(message.c_str(), "./dg %d", &type);
+			int toWrite[] = { 1, 2,3,4,5,6 };
+			data->Clear();
+			data->WriteInt16(6);
+			data->WriteInt16(S_DUNGEON_UI_HIGHLIGHT);
+
+			data->WriteInt16(0); //count
+			short next = data->NextPos();
+
+			for (size_t i = 0; i < 6; i++)
+			{
+				data->WritePos(next);
+				data->WriteInt16(data->_pos);
+				next = data->NextPos();
+				data->WriteInt32(toWrite[i]);
+				data->WriteByte(type);
+			}
+
+			data->WritePos(0);
+			caller->Send(data);
+			data->Clear();
+		}
+		else if (ServerUtils::StringStartsWith(message, "./exit"))
 		{
 			std::cout << ">>CLIENT DISCONNECT REQUEST\n";
 			data->Clear();
 			caller->Close();
 			return;
 		}
-		
+		else if (ServerUtils::StringStartsWith(message, "./additem"))
+		{
+			int id = 0; int ammount = 1;
+			sscanf(message.c_str(), "./additem %d %d", &id, &ammount);
+			if (id > 0)
+			{
+				if (ammount > 0 && ammount < 1000)
+					for (size_t k = 0; k < ammount; k++)
+					{
+						(*p->_inventory) << id;
+					}
+				else
+					(*p->_inventory) << id;
+
+				p->_inventory->SendInventory(caller, 0);
+			}
+		}
+		else if (ServerUtils::StringStartsWith(message, "./clearinventory"))
+		{
+			p->_inventory->ClearInventory(caller);
+
+		}
+		return;
 	}
 
-
-
 	data->Clear();
-
 	data->WriteInt16(0);
 	data->WriteInt16(S_CHAT);
 	short namePos = data->NextPos();
 	short textPos = data->NextPos();
-
-	data->WriteInt32(ChatType::ADMIN_CHAT);
-
-	data->WriteInt32(caller->_entityId);
-	data->WriteInt32(caller->_account->_selectedPlayer->_entityId);
-
-	data->WriteByte(1); //chat icon...
-	data->WriteByte(1); //?
-	data->WriteByte(5);
+	data->WriteInt32(type);
+	data->WriteInt32(p->_entityId);
+	data->WriteInt32(p->_subId);
+	data->WriteByte(0); //chat icon...
+	data->WriteByte(caller->GetAccount()->_isGm ? 1 : 0); //is gm
+	data->WriteByte(0); //unk chat icon
 	data->WritePos(namePos);
-	data->WriteString(text);
+	data->WriteString(p->_name);
 	data->WritePos(textPos);
-	data->WriteString(caller->_account->_selectedPlayer->_name);
-
+	data->WriteString(text);
 	data->WritePos(0);
 
-	caller->Send(data);
+	BroadcastSystem::Broadcast(caller, data, ME, 0);
 	BroadcastSystem::Broadcast(caller, data, VISIBLE_CLIENTS, 0);
 }

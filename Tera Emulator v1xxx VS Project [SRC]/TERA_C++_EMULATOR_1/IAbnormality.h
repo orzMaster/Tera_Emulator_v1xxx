@@ -2,26 +2,38 @@
 #define IABNORMALITY_H
 
 #include <vector>
+#include "AbnormalityEffect.h"
 
-class Client; class Player; class Account; class AbnormalityManager; class Effect; class Creature;
+#ifndef byte
+#define byte unsigned char
+#endif
+
 class IAbnormality
 {
 public:
 	IAbnormality();
-	virtual  ~IAbnormality();
+	~IAbnormality();
 
-	virtual void ApplyAbnormality(Client * client);
-	virtual void ApplyAbnormality(Creature * creature);
+	std::vector<AbnormalityEffect*> _effects;
 
-	virtual IAbnormality* Clone();
+	int _id,
+		_kind,
+		_level,
+		_priority,
+		_property,
+		_time,
+		_bySkillCategory;
 
-	int  _id;
-	const char * _name;
-	float _lifeTime;
-	float _startTime;
-	float _currentTime;
-	bool _alive;
-	std::vector<Effect * >_effects;
+	std::string
+		_toolTip,
+		_name;
+
+	bool
+		_notCareDeth,
+		_infinity,
+		_isBuff,
+		_isShow,
+		_isHideOnRefresh;
 };
 
 #endif

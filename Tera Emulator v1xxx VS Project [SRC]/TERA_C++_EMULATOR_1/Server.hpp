@@ -13,10 +13,13 @@
 
 #include "mysql\MySqlDriver.h"
 
-#define SERVER_ID  1
+#define SERVER_ID  4012
+#define SERVER_CLIENTS_DISCONNECTION_TIMEOUT 1000
+#define SERVER_NAME "Planet Gazah"
 
 class Server
 {
+	friend int main();
 private:
 	struct Config
 	{
@@ -25,6 +28,7 @@ private:
 		unsigned int maxClients;
 		bool isValid;
 		bool autoStart;
+		bool debugInfo;
 
 		std::string mysqlHostAddress;
 		std::string mysqlUsername;
@@ -46,7 +50,7 @@ public:
 
 private:
 	void NewConnection(Client* connection);
-	void EndConnection(Client* connection);
+	void RemoveConnection(Client* connection);
 	unsigned int _connectedClients;
 private:
 	Config LoadConfigFromFile(const char* file);
@@ -55,9 +59,13 @@ private:
 	WSADATA _wsaData;
 	MySqlDriver * _mysqlDriver;
 	Listener * _listener;
-	Config _serverConfig;
+	
 	std::vector<Client*> _clients;
 	std::mutex _serverMutex;
+
+public:
+	static  Config _serverConfig;
+
 };
 
 #endif

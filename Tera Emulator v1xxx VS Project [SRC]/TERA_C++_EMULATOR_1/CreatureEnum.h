@@ -6,6 +6,12 @@ enum CreatureReaction : int
 
 };
 
+enum CreatureActionState : int
+{
+	STATE_NONCOMBAT = 0,
+	STATE_COMBAT = 1,
+};
+
 enum CreatureStatus : int
 {
 	Dead = 0,

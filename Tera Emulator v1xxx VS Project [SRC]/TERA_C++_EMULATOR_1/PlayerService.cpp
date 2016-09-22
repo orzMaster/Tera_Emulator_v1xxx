@@ -20,18 +20,33 @@
 #include "ServerTimer.h"
 #include "LevelingService.h"
 #include "BroadcastService.h"
+#include "Inventory.h"
+#include "InventorySlot.h"
+#include "Skill.h"
+#include "CreatureStats.h"
+#include "StatsService.h"
+#include "ItemEnum.h"
 
 #include <sstream>
 #include <Windows.h>
-
+#include <ostream>
+#include "PassivityService.h"
 
 const int PlayerService::InitializePlayerService(MySqlDriver * driver)
 {
+	if (!driver)
+		return -1;
+	_driver = driver;
 	int t = 0;
 	while (!driver->Lock())
 	{
-		continue;
+		t++;
+		if (t >= 500)
+			break;
 	}
+	if (t >= 500)
+		return -2;
+
 	int count = 0;
 
 	sql::ResultSet * result = 0;
@@ -41,7 +56,6 @@ const int PlayerService::InitializePlayerService(MySqlDriver * driver)
 	{
 		Account * newAccount = new Account();
 
-		newAccount->_id = count + 1;
 
 		newAccount->_username = result->getString(2).c_str();
 		newAccount->_password = result->getString(3).c_str();
@@ -50,18 +64,44 @@ const int PlayerService::InitializePlayerService(MySqlDriver * driver)
 		newAccount->_coins = result->getInt(6);
 		newAccount->_isGm = result->getBoolean(7);
 		newAccount->_remainingPlayTime = (short)result->getInt(8);
-		newAccount->_hardwareInfo = result->getString(9).c_str();
+		newAccount->_hardwareInfo = "";
 
+		std::istream * hardwareInfoBlob = result->getBlob(9);
 		std::istream * accountSettings = result->getBlob(10);
-		newAccount->_accountSettingsSize = result->getInt(11);
 
-		newAccount->_accountSettings = new byte[newAccount->_accountSettingsSize];
-		accountSettings->read((char*)newAccount->_accountSettings, newAccount->_accountSettingsSize);
-		ServerUtils::UndoEscapedData(newAccount->_accountSettings, newAccount->_accountSettingsSize);
+		if (hardwareInfoBlob)
+		{
+			Stream tempHardwareStream = Stream(hardwareInfoBlob);
+			newAccount->_hardwareInfo = std::string((const char*)tempHardwareStream._raw, tempHardwareStream._size);
 
-		delete accountSettings;
-		accountSettings = 0;
-
+			tempHardwareStream.Clear();
+			delete hardwareInfoBlob;
+			hardwareInfoBlob = nullptr;
+		}
+		if (accountSettings)
+		{
+			accountSettings->seekg(0, std::ifstream::end);
+			int SettingsSize = accountSettings->tellg();
+			accountSettings->seekg(0, std::ifstream::beg);
+			if (SettingsSize > 0)
+			{
+				newAccount->_accountSettingsSize = SettingsSize;
+				newAccount->_accountSettings = new byte[newAccount->_accountSettingsSize];
+				accountSettings->read((char*)newAccount->_accountSettings, newAccount->_accountSettingsSize);
+			}
+			else
+			{
+				newAccount->_accountSettingsSize = 0;
+				newAccount->_accountSettings = nullptr;
+			}
+			delete accountSettings;
+			accountSettings = 0;
+		}
+		else
+		{
+			newAccount->_accountSettings = nullptr;
+			newAccount->_accountSettingsSize = 0;
+		}
 		_accountsNames.push_back(newAccount->_username);
 
 		sbuild << "SELECT * FROM players WHERE username='" << newAccount->_username << "'";
@@ -69,15 +109,10 @@ const int PlayerService::InitializePlayerService(MySqlDriver * driver)
 		while (res->next()) //Get players
 		{
 			Player * newPlayer = new Player();
+			newPlayer->_subId = newAccount->_lasPlayerSubId; newAccount->_lasPlayerSubId++;
 
 			newPlayer->_newPlayer = false;
 			newPlayer->_playerInfo = new Player::PlayerInfo;
-			newPlayer->_playerSkinWarehouse = new Player::PlayerSkinWareHouse;
-			newPlayer->_playerWarehouse = new Player::PlayerWarehouse;
-			ZeroMemory(newPlayer->_playerInfo, sizeof Player::PlayerInfo);
-			ZeroMemory(newPlayer->_playerWarehouse, sizeof Player::PlayerWarehouse);
-			ZeroMemory(newPlayer->_playerSkinWarehouse, sizeof Player::PlayerSkinWareHouse);
-
 
 			newPlayer->_name = res->getString(2).c_str();
 			_playerNames.push_back(newPlayer->_name);
@@ -86,7 +121,12 @@ const int PlayerService::InitializePlayerService(MySqlDriver * driver)
 			newPlayer->_position->_Y = (float)res->getDouble(4);
 			newPlayer->_position->_Z = (float)res->getDouble(5);
 			newPlayer->_position->_heading = (float)res->getInt(6);
-			newPlayer->_position->_areaId = (short)res->getInt(12);
+
+			newPlayer->_position->_continentId = (short)res->getInt(12);
+			newPlayer->_position->_worldMapGuardId = res->getInt(21);
+			newPlayer->_position->_worldMapWorldId = res->getInt(22);
+			newPlayer->_position->_worldMapSectionId = res->getInt(23);
+
 
 			newPlayer->_playerInfo->pRace = (PlayerRace)res->getInt(7);
 			newPlayer->_playerInfo->pGender = (PlayerGender)res->getInt(8);
@@ -94,25 +134,26 @@ const int PlayerService::InitializePlayerService(MySqlDriver * driver)
 
 			newPlayer->_exp = res->getInt(10);
 			newPlayer->_restedExp = res->getInt(11);
-			newPlayer->_level = (short)res->getInt(13);
+			newPlayer->_stats._level = (short)res->getInt(13);
 
 			newPlayer->_lastOnlineUTC = res->getInt64(17);
 			newPlayer->_creationTimeUTC = res->getInt64(18);
 			newPlayer->_banTimeUTC = res->getInt64(19);
 
+
 			std::istream *details1S = res->getBlob(14);
 			std::istream *details2S = res->getBlob(15);
 			std::istream * dataS = res->getBlob(16);
+			std::istream * visitedSectionsBlob = res->getBlob(20); //todo
 
-			newPlayer->_data = new byte[6];
+			newPlayer->_data = new byte[8];
 			newPlayer->_details1 = new byte[32];
 			newPlayer->_details2 = new byte[64];
+
+
 			details1S->read((char*)newPlayer->_details1, 32);
 			details2S->read((char*)newPlayer->_details2, 64);
-			dataS->read((char*)newPlayer->_data, 6);
-			ServerUtils::UndoEscapedData(newPlayer->_data, 8);
-			ServerUtils::UndoEscapedData(newPlayer->_details1, 32);
-			ServerUtils::UndoEscapedData(newPlayer->_details2, 64);
+			dataS->read((char*)newPlayer->_data, 8);
 
 			delete dataS;
 			dataS = 0;
@@ -120,141 +161,163 @@ const int PlayerService::InitializePlayerService(MySqlDriver * driver)
 			details1S = 0;
 			delete details2S;
 			details2S = 0;
+			if (visitedSectionsBlob)
+			{
+				delete visitedSectionsBlob;
+				visitedSectionsBlob = 0;
+			}
 
-			sbuild.clear(); sbuild.str("");
-			sbuild << "SELECT * FROM `player_warehouse` WHERE username='" << newAccount->_username << "' AND name='" << newPlayer->_name << "'";
-			sql::ResultSet *wareHouseaResult = 0; wareHouseaResult = driver->ExecuteQuery(sbuild.str().c_str());
-			sbuild.clear(); sbuild.str("");
-			sbuild << "SELECT * FROM `player_skin_warehouse` WHERE username='" << newAccount->_username << "' AND name='" << newPlayer->_name << "'";
-			sql::ResultSet * skinWareHouseaResult = 0; skinWareHouseaResult = driver->ExecuteQuery(sbuild.str().c_str());
+			newPlayer->_model = 10000;
+			newPlayer->_model += (newPlayer->_playerInfo->pRace * 2 + 1 + newPlayer->_playerInfo->pGender) * 100;
+			newPlayer->_model += newPlayer->_playerInfo->pClass + 1;
+
+
 			sbuild.clear(); sbuild.str("");
 			sbuild << "SELECT * FROM `player_inventory` WHERE username='" << newAccount->_username << "' AND name='" << newPlayer->_name << "'";
 			sql::ResultSet * inventory = 0; inventory = driver->ExecuteQuery(sbuild.str().c_str());
 			sbuild.clear(); sbuild.str("");
 			sbuild << "SELECT * FROM `player_deposit` WHERE username='" << newAccount->_username << "' AND name='" << newPlayer->_name << "'";
-			sql::ResultSet * deposit = 0; deposit = driver->ExecuteQuery(sbuild.str().c_str());
+			sql::ResultSet * bank = 0; bank = driver->ExecuteQuery(sbuild.str().c_str());
 			sbuild.clear(); sbuild.str("");
 			sbuild << "SELECT * FROM `player_skills` WHERE username='" << newAccount->_username << "' AND name='" << newPlayer->_name << "'";
 			sql::ResultSet * skills = 0; skills = driver->ExecuteQuery(sbuild.str().c_str());
-
+			sbuild.clear(); sbuild.str("");
 			sbuild << "SELECT * FROM `player_settings` WHERE username='" << newAccount->_username << "' AND name='" << newPlayer->_name << "'";
 			sql::ResultSet * settings = 0; settings = driver->ExecuteQuery(sbuild.str().c_str());
 
-			if (wareHouseaResult && wareHouseaResult->next())
-			{
-				newPlayer->_playerWarehouse->weapon = wareHouseaResult->getInt(3);
-				newPlayer->_playerWarehouse->armor = wareHouseaResult->getInt(4);
-				newPlayer->_playerWarehouse->gloves = wareHouseaResult->getInt(5);
-				newPlayer->_playerWarehouse->boots = wareHouseaResult->getInt(6);
-				newPlayer->_playerWarehouse->ring1 = wareHouseaResult->getInt(7);
-				newPlayer->_playerWarehouse->ring2 = wareHouseaResult->getInt(8);
-				newPlayer->_playerWarehouse->earring1 = wareHouseaResult->getInt(9);
-				newPlayer->_playerWarehouse->earring2 = wareHouseaResult->getInt(10);
-				newPlayer->_playerWarehouse->necklace = wareHouseaResult->getInt(11);
-				newPlayer->_playerWarehouse->innerWare = wareHouseaResult->getInt(12);
-				newPlayer->_playerWarehouse->broch = wareHouseaResult->getInt(13);
-				newPlayer->_playerWarehouse->belt = wareHouseaResult->getInt(14);
-				newPlayer->_playerWarehouse->skin1 = wareHouseaResult->getInt(15);
-				newPlayer->_playerWarehouse->skin2 = wareHouseaResult->getInt(16);
+			newPlayer->_inventory = new Inventory(newPlayer);
 
-
-				delete wareHouseaResult;
-				wareHouseaResult = 0;
-			}
-
-			if (skinWareHouseaResult && skinWareHouseaResult->next())
-			{
-				newPlayer->_playerSkinWarehouse->headSkin = skinWareHouseaResult->getInt(3);
-				newPlayer->_playerSkinWarehouse->faceSkin = skinWareHouseaResult->getInt(4);
-				newPlayer->_playerSkinWarehouse->bodySkin = skinWareHouseaResult->getInt(5);
-				newPlayer->_playerSkinWarehouse->weaponSkin = skinWareHouseaResult->getInt(6);
-				newPlayer->_playerSkinWarehouse->backSkin = skinWareHouseaResult->getInt(7);
-
-				delete skinWareHouseaResult;
-				skinWareHouseaResult = 0;
-			}
-			std::vector<int> _inventory;
-			std::vector<int> _deposit;
-			std::vector<int> _skillsList;
 			if (inventory && inventory->next())
 			{
+				newPlayer->_inventory->Initialize((short)inventory->getInt(4));
+				newPlayer->_inventory->AddGold(inventory->getInt64(5));
 
-				int itemsCount = inventory->getInt(4);
+				int itemsCount = 0;
 				std::istream * blobData = inventory->getBlob(3);
 
-				unsigned char toRead[4];
-				for (int i = 0; i < itemsCount; i++)
+				Stream st = Stream(blobData);
+
+				itemsCount = st.ReadInt32();
+				newPlayer->_inventory->_itemCount = itemsCount;
+				if (itemsCount <= 72 + 19)
+					for (size_t i = 0; i < itemsCount; i++)
+					{
+						int slotId = st.ReadInt32();
+						int itemId = st.ReadInt32();
+
+						IItem * item = InventoryService::ResolveItem(itemId);
+						if (!item)
+							continue;
+
+						(*newPlayer->_inventory)[slotId]->_isEmpty = 0;
+						(*newPlayer->_inventory)[slotId]->_info->_item = item;
+						(*newPlayer->_inventory)[slotId]->_info->_itemId = itemId;
+
+						(*newPlayer->_inventory)[slotId]->_info->_hasCrystals = st.ReadByte();
+						for (byte j = 0; j < (*newPlayer->_inventory)[slotId]->_info->_hasCrystals; j++)
+							(*newPlayer->_inventory)[slotId]->_info->_crystals[j] = st.ReadInt32();
+
+						(*newPlayer->_inventory)[slotId]->_info->_isMasterworked = st.ReadByte();
+						(*newPlayer->_inventory)[slotId]->_info->_isAwakened = st.ReadByte();
+						(*newPlayer->_inventory)[slotId]->_info->_isEnigmatic = st.ReadByte();
+						(*newPlayer->_inventory)[slotId]->_info->_enchantLevel = st.ReadByte();
+						(*newPlayer->_inventory)[slotId]->_info->_isBinded = st.ReadByte();
+						(*newPlayer->_inventory)[slotId]->_info->_binderEntityId = st.ReadInt32();
+						(*newPlayer->_inventory)[slotId]->_info->_isCrafted = st.ReadByte();
+						(*newPlayer->_inventory)[slotId]->_info->_crafterEntityId = st.ReadInt32();
+						(*newPlayer->_inventory)[slotId]->_info->_stackCount = st.ReadInt32();
+
+						short passivitiesCount = st.ReadInt16();
+						for (short j = 0; j < passivitiesCount; j++)
+						{
+							Passivity * ps = PassivityService::ResolvePassivity(st.ReadInt32());
+							if (ps)
+								(*newPlayer->_inventory)[slotId]->_info->_passivities.push_back(ps);
+						}
+
+					}
+
+				st.Clear();
+				if (blobData)
 				{
-					blobData->read((char*)toRead, 4);
-					_inventory.push_back((toRead[0] << 24) | (toRead[1] << 16) | (toRead[2] << 8) | (toRead[3]));
+					delete blobData;
+					blobData = 0;
 				}
 
-				delete blobData;
-				blobData = 0;
+				newPlayer->_inventory->RecalculateLevels();
 
 				delete inventory;
 				inventory = 0;
 			}
-			if (deposit && deposit->next())
+			else
+				newPlayer->_inventory->Initialize(40);
+
+			if (bank && bank->next())
 			{
-				int itemsCount = deposit->getInt(4);
-				std::istream * blobData = deposit->getBlob(3);
-
-				unsigned char toRead[4];
-				for (int i = 0; i < itemsCount; i++)
-				{
-					blobData->read((char*)toRead, 4);
-					_deposit.push_back((toRead[0] << 24) | (toRead[1] << 16) | (toRead[2] << 8) | (toRead[3]));
-				}
-
-				delete blobData;
-				blobData = 0;
-				delete deposit;
-				deposit = 0;
-			}
-
+				delete bank;
+				bank = 0;
+			} //needs work
 
 			if (skills && skills->next())
 			{
 				int skillsCount = skills->getInt(4);
 				std::istream * blobData = skills->getBlob(3);
-				unsigned char toRead[4];
-				for (size_t i = 0; i < skillsCount; i++)
+				if (blobData)
 				{
-					blobData->read((char*)toRead, 4);
-					_skillsList.push_back((toRead[3] << 24) | (toRead[2] << 16) | (toRead[1] << 8) | (toRead[0]));
+					Stream skillStream = Stream(blobData);
+
+					for (size_t i = 0; i < skillsCount; i++)
+					{
+						Skill *sk = nullptr;
+						if ((sk = SkillService::ResolveSkill(skillStream.ReadInt32())))
+							newPlayer->_skillList.push_back(sk);
+					}
+
+					delete blobData;
+					blobData = 0;
 				}
-				//we read skills ids from database blob
-				delete blobData;
-				blobData = 0;
+
 				delete skills;
 				skills = 0;
 			}
 
-			InventoryService::ResolveInventory(_inventory, newPlayer->_inventoryItems);
-			InventoryService::ResolveInventory(_deposit, newPlayer->_deposititems);
-			SkillService::ResolveSkillSet(_skillsList, newPlayer->_skillList); //and resolve thouse ids into skills from skill service
+			if (settings && settings->next())
+			{
+				std::istream* blobData = settings->getBlob(3);
+				if (blobData)
+				{
+					blobData->seekg(0, std::ifstream::end);
+					int size = blobData->tellg();
+					blobData->seekg(0, std::ifstream::beg);
 
-			BuildPlayerStats(newPlayer);
+					newPlayer->_playerSettings = new byte[size];
+					memset(newPlayer->_playerSettings, 0, size);
 
-			newPlayer->_model = 10000;
-			newPlayer->_model += ((ushort)newPlayer->_playerInfo->pRace * 2 + 1 + (ushort)newPlayer->_playerInfo->pGender) * 100;
-			newPlayer->_model += (ushort)newPlayer->_playerInfo->pClass + 1; //player model
+					blobData->read((char*)newPlayer->_playerSettings, size);
 
+					newPlayer->_settingSize = size;
 
-			newAccount->_playerCount++;
-			newAccount->_playerList.push_back(newPlayer);
+					delete blobData;
+					blobData = 0;
+				}
+				else
+				{
+					newPlayer->_playerSettings = nullptr;
+					newPlayer->_settingSize = 0;
+				}
+
+				delete settings;
+				settings = 0;
+			}
+
+			StatsService::CalculatePlayerStats(newPlayer);
+			newAccount->AddPlayer(newPlayer);
 		}
 		if (res)
 		{
 			delete res;
 			res = 0;
 		}
-
-		sbuild.clear();
-		sbuild.str("");
-
-
 
 		sbuild.clear();	sbuild.str("");
 		_accounts.push_back(newAccount);
@@ -264,9 +327,6 @@ const int PlayerService::InitializePlayerService(MySqlDriver * driver)
 			count++;
 	}
 
-
-
-	_driver = driver;
 	driver->Unlock();
 	return count;
 }
@@ -278,7 +338,6 @@ const bool PlayerService::CheckPlayerNameForm(std::string name)
 
 const bool PlayerService::CheckPlayerName(std::string name)
 {
-
 	for (size_t i = 0; i < _playerNames.size(); i++)
 	{
 		if (_playerNames[i] == name)
@@ -287,26 +346,19 @@ const bool PlayerService::CheckPlayerName(std::string name)
 	return true;
 }
 
-const bool PlayerService::CanCreatePlayer(Account * account)
+Account* PlayerService::PerformAccountLogin(const char * unsername, const char * password)
 {
-	return (account->_playerCount < MAX_PLAYERS_PER_ACCOUNT);
-}
+	std::lock_guard<std::mutex> lock(_mainMutex);
 
-const int PlayerService::PerformAccountLogin(const char * unsername, const char * password)
-{
-	_mainMutex.lock();
-
-	int result = -1;
-	for (size_t i = 0; i < _accountsNames.size(); i++)
+	for (size_t i = 0; i < _accounts.size(); i++)
 	{
-		if (_accountsNames[i] == unsername)
+		if (_accounts[i]->_username == unsername && _accounts[i]->_password == password)
 		{
-			result = i;
-			break;
+			return _accounts[i];
 		}
 	}
-	_mainMutex.unlock();
-	return result;
+
+	return nullptr;
 }
 
 Account * PlayerService::GetAccount(int accountIndex)
@@ -326,312 +378,696 @@ unsigned int PlayerService::GetAccountCount()
 	return _accounts.size();
 }
 
-void PlayerService::CreatePlayer(Account *  account, std::string name, short playerGender, short playerClass, short playerRace, byte* details1, byte* details2, byte* data)
+void PlayerService::UpdateAccountData(Account * account)
 {
-
-
-}
-
-
-void PlayerService::SaveAccountData(Account * account)
-{
-
 	if (!account || !_driver)
 		return;
 
-	while (!_driver->Lock())
-		continue;
-
-
-
-	sql::Statement * st = _driver->GetConnection()->createStatement();
-	SQLStream s = SQLStream();
-	s.WriteString("UPDATE accounts SET accountSettings={'");
-	s.Write((const char*)account->_accountSettings, account->_accountSettingsSize);
-	s.WriteString("'},");
-	s.WriteString("accountSettingsSize={");
-	s[account->_accountSettingsSize];
-	s.WriteString("} WHERE username=");
-	s.WriteAndQuoteString(account->_username.c_str());
-	s.EscapeString();
-
-
-	try
-	{
-		st->execute((const char*)s);
-	}
-	catch (const sql::SQLException& e)
-	{
-		std::cout << ">>Error:" << e.what() << "\n";
-	}
-	s.Clear();
-
+	sql::PreparedStatement * s = nullptr;
+	std::lock_guard<std::mutex> lock(_mainMutex);
+	int result = 0;
 	for (size_t i = 0; i < account->_playerList.size(); i++)
 	{
 		Player * p = account->_playerList[i];
-		if (p->_toDelete && !p->_newPlayer)
+		if (!p)
+			continue;
+		else if (p->_toDelete == 1 && !p->_newPlayer)
 		{
-			s.Clear();
-			s.WriteString("DELETE FROM players WHERE name='"); s._raw += p->_name; s._raw += "'";
+			p->_toDelete = 2;
+			//players
+
+			s = _driver->GetPreparedStatement("DELETE  FROM players WHERE name=?");
+			s->setString(1, p->_name.c_str());
 			try
 			{
-				st->execute((const char*)s);
+				s->executeUpdate();
 			}
 			catch (const sql::SQLException& e)
 			{
 				std::cout << ">>Error:" << e.what() << "\n";
 			}
 
-			s.Clear();
-			s.WriteString("DELETE FROM player_warehouse WHERE name='"); s._raw += p->_name; s._raw += "'";
+			delete s;
+			s = nullptr;
+
+			//player_inventory
+			s = _driver->GetPreparedStatement("DELETE FROM player_inventory WHERE name=?");
+			s->setString(1, p->_name.c_str());
+
 			try
 			{
-				st->execute((const char*)s);
+				s->executeUpdate();
 			}
 			catch (const sql::SQLException& e)
 			{
 				std::cout << ">>Error:" << e.what() << "\n";
 			}
+			delete s;
+			s = nullptr;
 
-			s.Clear();
-			s.WriteString("DELETE FROM player_skin_warehouse WHERE name='"); s._raw += p->_name; s._raw += "'";
+			//player_bank
+			s = _driver->GetPreparedStatement("DELETE FROM player_bank WHERE name=?");
+			s->setString(1, p->_name.c_str());
 			try
 			{
-				st->execute((const char*)s);
+				s->executeUpdate();
 			}
 			catch (const sql::SQLException& e)
 			{
 				std::cout << ">>Error:" << e.what() << "\n";
 			}
+			delete s;
+			s = nullptr;
 
-			std::cout << ">> DELETED name[" << p->_name << "]\n\n";
+			//player_skills
+			s = _driver->GetPreparedStatement("DELETE FROM player_skills WHERE name=?");
+			s->setString(1, p->_name.c_str());
+			try
+			{
+				s->executeUpdate();
+			}
+			catch (const sql::SQLException& e)
+			{
+				std::cout << ">>Error:" << e.what() << "\n";
+			}
+			delete s;
+			s = nullptr;
+
+			//player_settings
+			s = _driver->GetPreparedStatement("DELETE FROM player_settings WHERE name=?");
+			s->setString(1, p->_name.c_str());
+			try
+			{
+				s->executeUpdate();
+			}
+			catch (const sql::SQLException& e)
+			{
+				std::cout << ">>Error:" << e.what() << "\n";
+			}
+			delete s;
+			s = nullptr;
+
+			std::cout << "::DELETED name[" << p->_name << "]\n";
 
 		}
-		else if (p->_toDelete && p->_newPlayer)
+		else if (p->_toDelete == 1 && p->_newPlayer)
 			continue;
-		else if (!p->_toDelete && p->_newPlayer)
+		else if (p->_toDelete == 0 && p->_newPlayer)
 		{
-
-			byte *details1 = (byte*)SQLStream::EscapeData((char*)p->_details1, 32);
-			byte*details2 = (byte*)SQLStream::EscapeData((char*)p->_details2, 64);
-			byte*data = (byte*)SQLStream::EscapeData((char*)p->_data, 8);
-
-			s.Clear();
-			s.WriteString("INSERT INTO players(username,name,x,y,z,h,race,gender,class,exp,restedExp,areaId,level,details1,details2,headData,lastOnlineUTC,creationTimeUTC,banTimeUTC) VALUES(");
-			s.WriteAndQuoteString(account->_username.c_str());
-			s[','];
-			s.WriteAndQuoteString(p->_name.c_str());
-			s[','];
-			s[p->_position->_X];
-			s[','];
-			s[p->_position->_Y];
-			s[','];
-			s[p->_position->_Z];
-			s[','];
-			s[p->_position->_heading];
-			s[','];
-			s[p->_playerInfo->pRace];
-			s[','];
-			s[p->_playerInfo->pGender];
-			s[','];
-			s[p->_playerInfo->pClass];
-			s[','];
-			s[p->_exp];
-			s[','];
-			s[p->_restedExp];
-			s[','];
-			s[1]; //area id
-			s[','];
-			s[p->_level];
-			s[','];
-
-			s['\''];
-			s.Write((char*)details1, 32);
-			s['\''];
-
-			s[','];
-
-			s['\''];
-			s.Write((char*)details2, 64);
-			s['\''];
-
-			s[','];
-
-			s['\''];
-			s.Write((char*)data, 8);
-			s['\''];
-
-			s[','];
-			s[p->_lastOnlineUTC];
-			s[','];
-			s[p->_creationTimeUTC];
-			s[','];
-			s[p->_banTimeUTC];
-			s[')'];
-			bool result = 0;
-			try
-			{
-				result = st->execute((const char*)s);
-			}
-			catch (const sql::SQLException& e)
-			{
-				std::cout << ">>Error:" << e.what() << "\n";
-			}
-
-			details1[31] = 0;
-			delete details1;
-			details1 = 0;
-			details2[63] = 0;
-			delete details2;
-			details2 = 0;
-			data[7] = 0;
-			delete data;
-			data = 0;
-
-
-			s.Clear();
-			s.WriteString("INSERT INTO player_warehouse(username,name,weapon,chest,gloves,boots,ring1,ring2,earring1,earring2,necklace,innerware,broch,belt,skin1,skin2) VALUES(");
-			s.WriteAndQuoteString(account->_username.c_str());
-			s[','];
-			s.WriteAndQuoteString(p->_name.c_str());
-			s[','];
-			s[p->_playerWarehouse->weapon];
-			s[','];
-			s[p->_playerWarehouse->armor];
-			s[','];
-			s[p->_playerWarehouse->gloves];
-			s[','];
-			s[p->_playerWarehouse->boots];
-			s[','];
-			s[p->_playerWarehouse->ring1];
-			s[','];
-			s[p->_playerWarehouse->ring2];
-			s[','];
-			s[p->_playerWarehouse->earring1];
-			s[','];
-			s[p->_playerWarehouse->earring2];
-			s[','];
-			s[p->_playerWarehouse->necklace];
-			s[','];
-			s[p->_playerWarehouse->innerWare];
-			s[','];
-			s[p->_playerWarehouse->broch];
-			s[','];
-			s[p->_playerWarehouse->belt];
-			s[','];
-			s[p->_playerWarehouse->skin1];
-			s[','];
-			s[p->_playerWarehouse->skin2];
-			s[')'];
+			result = 0; p->_newPlayer = false;
+#pragma region account
+			s = _driver->GetPreparedStatement("UPDATE accounts SET coins=?,isGm=?,lastOnlineUTC=? WHERE username=?");
+			s->setInt(1, 0);//todo----------------------------------------------------
+			s->setBoolean(2, account->_isGm);
+			s->setInt64(3, ServerTimer::GetCurrentUTC());
+			s->setString(4, account->_username.c_str());
 
 			result = 0;
 			try
 			{
-				result = st->execute((const char*)s);
+				result = s->executeUpdate();
 			}
 			catch (const sql::SQLException& e)
 			{
-				std::cout << ">>Error:" << e.what() << "\n";
+				std::cout << ">>Error:FAILED UPDATE account [" << e.what() << "]\n";
 			}
 
-			s.Clear();
-			s.WriteString("INSERT INTO player_skin_warehouse(username,name,headSkin,faceSkin,bodySkin,weaponSkin,backSkin) VALUES(");
-			s.WriteAndQuoteString(account->_username.c_str());
-			s[','];
-			s.WriteAndQuoteString(p->_name.c_str());
-			s[','];
-			s[p->_playerSkinWarehouse->headSkin];
-			s[','];
-			s[p->_playerSkinWarehouse->faceSkin];
-			s[','];
-			s[p->_playerSkinWarehouse->bodySkin];
-			s[','];
-			s[p->_playerSkinWarehouse->weaponSkin];
-			s[','];
-			s[p->_playerSkinWarehouse->backSkin];
-			s[')'];
+			delete s;
+			s = nullptr;
+
+			if (account->_accountSettingsSize > 0 && account->_accountSettings)
+			{
+				s = _driver->GetPreparedStatement("UPDATE accounts SET accountSettings=?,accountSettingsSize=? WHERE username=?");
+
+				std::istringstream  accSettings = std::istringstream(std::string((const char*)account->_accountSettings, account->_accountSettingsSize));
+				s->setBlob(1, &accSettings);
+				s->setInt(2, account->_accountSettingsSize);
+				s->setString(3, account->_username.c_str());
+				try
+				{
+					result = s->executeUpdate();
+				}
+				catch (const sql::SQLException& e)
+				{
+					std::cout << ">>Error:FAILED UPDATE accountSettings [" << e.what() << "]\n";
+				}
+
+				delete s;
+				s = nullptr;
+			}
+
+			if (account->_hardwareInfo.size() > 0)
+			{
+				s = _driver->GetPreparedStatement("UPDATE accounts SET hardwareInfo=? WHERE username=?");
+
+				std::istringstream  hardwareInfo = std::istringstream(account->_hardwareInfo);
+				s->setBlob(1, &hardwareInfo);
+				s->setString(2, account->_username.c_str());
+				try
+				{
+					result = s->executeUpdate();
+				}
+				catch (const sql::SQLException& e)
+				{
+					std::cout << ">>Error:FAILED UPDATE accountHardwareInfo [" << e.what() << "]\n";
+				}
+
+				delete s;
+				s = nullptr;
+			}
+#pragma endregion
+#pragma region players
+			std::istringstream details1 = std::istringstream(std::string((const char*)p->_details1, 32));
+			std::istringstream details2 = std::istringstream(std::string((const char*)p->_details2, 64));
+			std::istringstream data = std::istringstream(std::string((const char*)p->_data, 8));
+
+			sql::PreparedStatement * s = _driver->GetPreparedStatement("INSERT INTO players(username,name,x,y,z,h,race,gender,class,exp,restedExp,areaId,level,details1,details2,headData,lastOnlineUTC,creationTimeUTC,banTimeUTC,visitedSections,worldMapGuardId,worldMapWorldId,worldMapSectionId) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+			s->setString(1, account->_username.c_str());
+			s->setString(2, p->_name.c_str());
+
+			s->setDouble(3, p->_position->_X);
+			s->setDouble(4, p->_position->_Y);
+			s->setDouble(5, p->_position->_Z);
+			s->setInt(6, p->_position->_heading);
+
+			s->setInt(7, p->_playerInfo->pRace);
+			s->setInt(8, p->_playerInfo->pGender);
+			s->setInt(9, p->_playerInfo->pClass);
+
+			s->setInt64(10, p->_exp);
+			s->setInt64(11, p->_restedExp);
+
+			s->setInt(12, p->_position->_continentId);
+			s->setInt(13, p->_stats._level);
+
+			s->setBlob(14, &details1);
+			s->setBlob(15, &details2);
+			s->setBlob(16, &data);
+
+			s->setUInt64(17, ServerTimer::GetCurrentUTC());
+			s->setUInt64(18, p->_creationTimeUTC);
+			s->setUInt64(19, p->_banTimeUTC);
+			s->setNull(20, 0);
+
+			s->setInt(21, p->_position->_worldMapGuardId);
+			s->setInt(22, p->_position->_worldMapWorldId);
+			s->setInt(23, p->_position->_worldMapSectionId);
 			result = 0;
 			try
 			{
-				result = st->execute((const char*)s);
+				result = s->executeUpdate();
 			}
 			catch (const sql::SQLException& e)
 			{
-				std::cout << ">>Error:" << e.what() << "\n";
+				std::cout << ">>Error:FAILED TO INSERT player" << e.what() << "\n";
 			}
 
 
+			delete s;
+			s = nullptr;
+#pragma endregion
+#pragma region player_bank
+			Stream bankStream = Stream();
+			bankStream.WriteInt32(0);//itemsCount todo
 
-			//todo add inventory data , bank data, guild data, skill data etc
+			s = _driver->GetPreparedStatement("INSERT INTO player_bank(username,name,items,slotCount,gold) VALUES(?,?,?,?,?)");
+			s->setString(1, account->_username.c_str());
+			s->setString(2, p->_name.c_str());
+
+			std::istringstream bankBlob = std::istringstream(std::string((const char*)bankStream._raw, bankStream._size));
+			s->setBlob(3, &bankBlob);
+			s->setInt(4, (int)(9 * 8) * 4);
+			s->setInt(5, 0); //todo
+
+			result = 0;
+			try
+			{
+				result = s->executeUpdate();
+			}
+			catch (const sql::SQLException& e)
+			{
+				std::cout << ">>Error:FAILED TO INSERT player_bank" << e.what() << "\n";
+			}
+
+			bankStream.Clear();
+
+			delete s;
+			s = nullptr;
+#pragma endregion
+#pragma region player_inventory
+			Stream * inventoryRaw = p->_inventory->GetItemsRAW(); std::istringstream invBlob = std::istringstream(std::string((const char*)inventoryRaw->_raw, inventoryRaw->_size));
+			s = _driver->GetPreparedStatement("INSERT INTO player_inventory(username,name,items,slotCount,gold) VALUES(?,?,?,?,?)");
+			s->setString(1, account->_username.c_str());
+			s->setString(2, p->_name.c_str());
+			s->setBlob(3, &invBlob);
+
+			s->setInt(4, p->_inventory->_slotCount);
+			s->setInt(5, p->_inventory->_gold);
+
+			result = 0;
+			try
+			{
+				result = s->executeUpdate();
+			}
+			catch (const sql::SQLException& e)
+			{
+				std::cout << ">>Error:FAILED TO INSERT player_inventory" << e.what() << "\n";
+			}
+
+			delete inventoryRaw;
+			inventoryRaw = 0;
+
+			s->close();
+			delete s;
+			s = nullptr;
+#pragma endregion
+#pragma region player_settings
+			s = _driver->GetPreparedStatement("INSERT INTO player_settings(username,name,settings) VALUES(?,?,?)");
+			s->setString(1, account->_username.c_str());
+			s->setString(2, p->_name.c_str());
+			if (p->_playerSettings)
+			{
+				std::istringstream pSettingsBlob = std::istringstream(std::string((const char*)p->_playerSettings, p->_settingSize));
+				s->setBlob(3, &pSettingsBlob);
+			}
+			else
+				s->setNull(3, 0);
+
+			result = 0;
+			try
+			{
+				result = s->executeUpdate();
+			}
+			catch (const sql::SQLException& e)
+			{
+				std::cout << ">>Error:FAILED TO INSERT player_settings" << e.what() << "\n";
+			}
+
+			s->close();
+			delete s;
+			s = nullptr;
+#pragma endregion
+#pragma region player_skills
+			Stream skillStream = Stream();
+			for (size_t i = 0; i < p->_skillList.size(); i++)
+				skillStream.WriteInt32(p->_skillList[i]->_id);
+			s = _driver->GetPreparedStatement("INSERT INTO player_skills(username,name,learnedSkills,skillCount) VALUES(?,?,?,?)");
+			s->setString(1, account->_username.c_str());
+			s->setString(2, p->_name.c_str());
+
+			if (skillStream._size >= 4)
+			{
+				std::istringstream skillsBlob = std::istringstream(std::string((const char*)skillStream._raw, skillStream._size));
+				s->setBlob(3, &skillsBlob);
+			}
+			else
+				s->setNull(3, 0);
+
+			s->setInt(4, p->_skillList.size());
+
+			result = 0;
+			try
+			{
+				s->executeUpdate();
+			}
+			catch (const sql::SQLException& e)
+			{
+				std::cout << ">>Error:FAILED TO INSERT player_skills" << e.what() << "\n";
+			}
+
+			skillStream.Clear();
+			s->close();
+			delete s;
+			s = nullptr;
+#pragma endregion
+		}
+		else if (p->_toDelete == 0 && !p->_newPlayer)
+		{
+			result = 0;
+#pragma region account
+			s = _driver->GetPreparedStatement("UPDATE accounts SET coins=?,isGm=?,lastOnlineUTC=? WHERE username=?");
+			s->setInt(1, 0);//todo----------------------------------------------------
+			s->setBoolean(2, account->_isGm);
+			s->setInt64(3, ServerTimer::GetCurrentUTC());
+			s->setString(4, account->_username.c_str());
+
+			result = 0;
+			try
+			{
+				result = s->executeUpdate();
+			}
+			catch (const sql::SQLException& e)
+			{
+				std::cout << ">>Error:FAILED UPDATE account [" << e.what() << "]\n";
+			}
+
+			delete s;
+			s = nullptr;
+
+			if (account->_accountSettingsSize > 0 && account->_accountSettings)
+			{
+				s = _driver->GetPreparedStatement("UPDATE accounts SET accountSettings=?,accountSettingsSize=? WHERE username=?");
+
+				std::istringstream  accSettings = std::istringstream(std::string((const char*)account->_accountSettings, account->_accountSettingsSize));
+				s->setBlob(1, &accSettings);
+				s->setInt(2, account->_accountSettingsSize);
+				s->setString(3, account->_username.c_str());
+				try
+				{
+					result = s->executeUpdate();
+				}
+				catch (const sql::SQLException& e)
+				{
+					std::cout << ">>Error:FAILED UPDATE accountSettings [" << e.what() << "]\n";
+				}
+
+				delete s;
+				s = nullptr;
+			}
+
+			if (account->_hardwareInfo.size() > 0)
+			{
+				s = _driver->GetPreparedStatement("UPDATE accounts SET hardwareInfo=? WHERE username=?");
+
+				std::istringstream  hardwareInfo = std::istringstream(account->_hardwareInfo);
+				s->setBlob(1, &hardwareInfo);
+				s->setString(2, account->_username.c_str());
+				try
+				{
+					result = s->executeUpdate();
+				}
+				catch (const sql::SQLException& e)
+				{
+					std::cout << ">>Error:FAILED UPDATE accountHardwareInfo [" << e.what() << "]\n";
+				}
+
+				delete s;
+				s = nullptr;
+			}
+#pragma endregion
+#pragma region players
+			std::istringstream details1 = std::istringstream(std::string((const char*)p->_details1, 32));
+			std::istringstream details2 = std::istringstream(std::string((const char*)p->_details2, 64));
+			std::istringstream data = std::istringstream(std::string((const char*)p->_data, 8));
+
+			sql::PreparedStatement * s = _driver->GetPreparedStatement("UPDATE players SET x=?,y=?,z=?,h=?,race=?,gender=?,class=?,exp=?,restedExp=?,areaId=?,level=? ,details1=? ,details2=? ,headData=? ,lastOnlineUTC=? ,banTimeUTC=?, worldMapGuardId=? , worldMapWorldId=?,worldMapSectionId = ? WHERE name=?");
+			s->setDouble(1, p->_position->_X);
+			s->setDouble(2, p->_position->_Y);
+			s->setDouble(3, p->_position->_Z);
+			s->setInt(4, p->_position->_heading);
+
+			s->setInt(5, p->_playerInfo->pRace);
+			s->setInt(6, p->_playerInfo->pGender);
+			s->setInt(7, p->_playerInfo->pClass);
+
+			s->setInt64(8, p->_exp);
+			s->setInt64(9, p->_restedExp);
+
+			s->setInt(10, p->_position->_continentId);
+			s->setInt(11, p->_stats._level);
+
+			s->setBlob(12, &details1);
+			s->setBlob(13, &details2);
+			s->setBlob(14, &data);
+
+
+			s->setInt64(15, ServerTimer::GetCurrentUTC());
+			s->setInt64(16, p->_banTimeUTC);
+
+			s->setInt(17, p->_position->_worldMapGuardId);
+			s->setInt(18, p->_position->_worldMapWorldId);
+			s->setInt(19, p->_position->_worldMapSectionId);
+
+			s->setString(20, p->_name.c_str());
+			result = 0;
+			try
+			{
+				result = s->executeUpdate();
+			}
+			catch (const sql::SQLException& e)
+			{
+				std::cout << ">>Error:FAILED UPDATE players [" << e.what() << "]\n";
+			}
+
+			s->close();
+			delete s;
+			s = nullptr;
+#pragma endregion
+#pragma region player_inventory
+			s = _driver->GetPreparedStatement("DELETE FROM player_inventory WHERE name=?");
+			s->setString(1, p->_name.c_str());
+			try
+			{
+				result = s->executeUpdate();
+			}
+			catch (const sql::SQLException& e)
+			{
+				std::cout << ">>Error:FAILED UPDATE player_inventory [" << e.what() << "]\n";
+			}
+			s->close();
+			delete s;
+			s = nullptr;
+
+			Stream* rawItems = p->_inventory->GetItemsRAW(); std::istringstream itemsBlob = std::istringstream(std::string((const char*)rawItems->_raw, rawItems->_size));
+			s = _driver->GetPreparedStatement("INSERT INTO player_inventory(username,name,items,slotCount,gold) VALUES(?,?,?,?,?)");
+			s->setString(1, account->_username.c_str());
+			s->setString(2, p->_name.c_str());
+			s->setBlob(3, &itemsBlob);
+
+			s->setInt(4, p->_inventory->_slotCount);
+			s->setInt(5, p->_inventory->_gold);
+
+			result = 0;
+			try
+			{
+				result = s->executeUpdate();
+			}
+			catch (const sql::SQLException& e)
+			{
+				std::cout << ">>Error:FAILED UPDATE player_inventory [" << e.what() << "]\n";
+			}
+
+
+			if (rawItems)
+			{
+				delete rawItems;
+				rawItems = 0;
+			}
+			s->close();
+			delete s;
+			s = nullptr;
+#pragma endregion
+#pragma region player_settings
+			s = _driver->GetPreparedStatement("UPDATE player_settings SET settings=? WHERE name=?");
+
+			if (p->_playerSettings)
+			{
+				std::istringstream pSettingsBlob = std::istringstream(std::string((const char*)p->_playerSettings, p->_settingSize));
+				s->setBlob(1, &pSettingsBlob);
+			}
+
+			s->setString(2, p->_name.c_str());
+
+			result = 0;
+			try
+			{
+				result = s->executeUpdate();
+			}
+			catch (const sql::SQLException& e)
+			{
+				std::cout << ">>Error:FAILED UPDATE player_settings [" << e.what() << "]\n";
+			}
+
+			s->close();
+			delete s;
+			s = nullptr;
+#pragma endregion
+#pragma region player_skills
+			s = _driver->GetPreparedStatement("DELETE FROM player_skills WHERE name=?");
+			s->setString(1, p->_name.c_str());
+			result = 0;
+			try
+			{
+				result = s->executeUpdate();
+			}
+			catch (const sql::SQLException& e)
+			{
+				std::cout << ">>Error:FAILED TO DELETE player_skills" << e.what() << "\n";
+			}
+			s->close();
+			delete s;
+			s = nullptr;
+
+
+			Stream skillStream = Stream();
+			for (size_t i = 0; i < p->_skillList.size(); i++)
+				skillStream.WriteInt32(p->_skillList[i]->_id);
+			s = _driver->GetPreparedStatement("INSERT INTO player_skills(username,name,learnedSkills,skillCount) VALUES(?,?,?,?)");
+			s->setString(1, account->_username.c_str());
+			s->setString(2, p->_name.c_str());
+
+			if (skillStream._size >= 4)
+			{
+				std::istringstream skillsBlob = std::istringstream(std::string((const char*)skillStream._raw, skillStream._size));
+				s->setBlob(3, &skillsBlob);
+			}
+			else
+				s->setNull(3, 0);
+
+			s->setInt(4, p->_skillList.size());
+
+			result = 0;
+			try
+			{
+				result = s->executeUpdate();
+			}
+			catch (const sql::SQLException& e)
+			{
+				std::cout << ">>Error:FAILED TO INSERT player_skills" << e.what() << "\n";
+			}
+
+			skillStream.Clear();
+			s->close();
+			delete s;
+			s = nullptr;
+#pragma endregion
+#pragma region player_bank
+			Stream bankStream = Stream();
+			bankStream.WriteInt32(0); //itemsCount
+
+			s = _driver->GetPreparedStatement("UPDATE player_bank SET items=?,slotCount=?,gold=? WHERE name=?");
+
+			std::istringstream bankBlob = std::istringstream(std::string((const char*)bankStream._raw, bankStream._size));
+			s->setBlob(1, &bankBlob);
+
+			s->setInt(2, (int)(9 * 8) * 4);
+			s->setInt(3, 0); //todo
+			s->setString(4, p->_name.c_str());
+
+			result = 0;
+			try
+			{
+				result = s->executeUpdate();
+			}
+			catch (const sql::SQLException& e)
+			{
+				std::cout << ">>Error:FAILED UPDATE player_bank [" << e.what() << "]\n";
+			}
+
+			bankStream.Clear();
+			s->close();
+			delete s;
+			s = nullptr;
+#pragma endregion
 		}
 	}
 
-	_driver->Unlock();
 }
 
-
-void PlayerService::SendPlayerSettings(Client * client)
+void PlayerService::SendPlayerSettings(Client * client, bool broadCast)
 {
+	if (client->HasSelectedPlayer())
+	{
+		Player * p = client->GetSelectedPlayer();
+		Stream s = Stream();
+		s.WriteInt16(0);
+		s.WriteInt16(S_LOAD_CLIENT_USER_SETTING);
+		s.WriteInt16(8);
+		s.WriteInt16(p->_settingSize);
+		s.Write(p->_playerSettings, p->_settingSize);
+		s.WritePos(0);
 
+		if (broadCast)
+			BroadcastSystem::Broadcast(client, &s, ME, 0);
+		else
+			client->Send(&s);
+	}
 }
 
 void PlayerService::ReleaseData()
 {
-	for (unsigned int i = 0; i < _accounts.size(); i++)
+	for (size_t i = 0; i < _accounts.size(); i++)
 	{
 		if (_accounts[i])
 		{
-			SaveAccountData(_accounts[i]);
-
 			delete _accounts[i];
 			_accounts[i] = 0;
 		}
 	}
 	_accounts.clear();
 
+	_playerNames.clear();
+	_accountsNames.clear();
+
+	_driver = nullptr;
 }
 
-
-void PlayerService::BuildPlayerStats(Player * p)
+void PlayerService::SendExternalChange(Client * caller, bool sendToVisivle , bool broadcast)
 {
-	CreatureStats * stats = new CreatureStats();
-	ZeroMemory(stats, sizeof CreatureStats);
-
-
-	stats->_maxHp = 1020;
-	stats->_maxMp = 1010;
-	stats->_currentHp = 400;
-	stats->_currentMp = 400;
-
-	stats->_attack = 1100;
-	stats->_defense = 1120;
-	stats->_power = 23;
-	stats->_endurance = 180;
-	stats->_attackSpeed = 123;
-	stats->_movementSpeed = 143;
-	stats->_balance = 2400;
-	stats->_impact = 3400;
-	stats->_balanceFactor = 45.25;
-	stats->_impactFactor = 78.45;
-	stats->_critChance = 180.24;
-	stats->_critPower = 2.24;
-	stats->_critResist = 3.35;
-	stats->_stunResistance = 56.50;
-
-	if (p && p->_stats)
-	{
-		delete p->_stats;
-		p->_stats = 0;
-	}
-	else if (!p)
-	{
-		delete stats;
-		stats = 0;
+	Player * p = caller->GetSelectedPlayer();
+	if (!p)
 		return;
+
+	Stream * data = new Stream();
+	data->WriteInt16(0);
+	data->WriteInt16(S_USER_EXTERNAL_CHANGE);
+
+	data->WriteInt32(p->_entityId);
+	data->WriteInt32(p->_subId);
+
+	data->WriteInt32((*p->_inventory)[PROFILE_WEAPON]->_info->_itemId);
+	data->WriteInt32((*p->_inventory)[PROFILE_ARMOR]->_info->_itemId);
+	data->WriteInt32((*p->_inventory)[PROFILE_GLOVES]->_info->_itemId);
+	data->WriteInt32((*p->_inventory)[PROFILE_BOOTS]->_info->_itemId);
+
+	data->WriteInt32((*p->_inventory)[PROFILE_INNERWARE]->_info->_itemId);
+	data->WriteInt32((*p->_inventory)[PROFILE_MASK]->_info->_itemId); //head
+	data->WriteInt32((*p->_inventory)[PROFILE_HEAD_ADRONMENT]->_info->_itemId); //face
+
+
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+
+	data->WriteByte((*p->_inventory)[PROFILE_WEAPON]->_info->_enchantLevel);
+	data->WriteByte((*p->_inventory)[PROFILE_ARMOR]->_info->_enchantLevel);
+	data->WriteByte((*p->_inventory)[PROFILE_GLOVES]->_info->_enchantLevel);
+	data->WriteByte((*p->_inventory)[PROFILE_BOOTS]->_info->_enchantLevel);
+
+	data->WriteInt32((*p->_inventory)[PROFILE_SKIN_HEAD]->_info->_itemId);
+	data->WriteInt32((*p->_inventory)[PROFILE_SKIN_FACE]->_info->_itemId);
+	data->WriteInt32((*p->_inventory)[PROFILE_SKIN_BACK]->_info->_itemId);
+	data->WriteInt32((*p->_inventory)[PROFILE_SKIN_WEAPON]->_info->_itemId);
+	data->WriteInt32((*p->_inventory)[PROFILE_SKIN_BODY]->_info->_itemId);
+
+	data->WriteInt32(0); //costume dye
+	data->WriteByte(1); //enables skin, hair adornment, mask, and costume (back is always on)
+
+	data->WritePos(0);
+
+	if (broadcast)
+	{
+		if (sendToVisivle)
+			BroadcastSystem::Broadcast(caller, data, ME_VISIBLE_CLIENTS, 0);
+		else
+			BroadcastSystem::Broadcast(caller, data, ME, 0);
+	}
+	else
+	{
+		if (sendToVisivle)
+			caller->SendToVisibleClients(data);
+
+		caller->Send(data);
 	}
 
-	p->_stats = stats;
+	data->Clear();
+	delete data;
+	data = 0;
 }
+
 
 std::vector<Account*> PlayerService::_accounts;
 std::mutex PlayerService::_mainMutex;

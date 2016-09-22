@@ -1,25 +1,39 @@
 #pragma once
 
-#include <vector>
-#include <string>
+#include "PlayerEnums.h"
 
-enum PassivityType : int
-{
-	STATS_CHANGE = 0
-};
+#ifndef byte
+#define byte unsigned char
+#endif
 
-class Effect; class Client; class Creature; class IAbnormality;
 class Passivity
 {
 public:
-	Passivity(PassivityType type);
-	virtual ~Passivity();
+	Passivity();
+	
+	MobSize _mobSize;
+	
+	int
+		_conditionValue,
+		_conditionCategory,
+		_abnormalityKind,
+		_abnormalityCategory,
+		_condition,
+		_tickInterval,
+		_method,
+		_kind,
+		_id,
+		_prevPassivityId,
+		_passivityChangeId,
+		_passivityChangeTime,
+		_type;
 
-	virtual void ApplyPassivity(Client* client) = 0;
-	virtual void ApplyPassivity(Creature* creature) = 0;
+	float
+		_value,
+		_probability;
 
-	std::vector<Effect*> _effects;
-	std::vector<IAbnormality*> _abnormalities;
-	PassivityType _type;
+	byte
+		_judgmentOnce,
+		_balancedByTargetCount;
 };
 

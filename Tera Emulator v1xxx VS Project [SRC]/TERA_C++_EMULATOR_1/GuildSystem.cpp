@@ -18,15 +18,9 @@ void GuildSystem::BrodcastGuildFlag(Client * c)
 {
 	Stream s = Stream();
 
-	s.WriteInt16(0);
+	s.WriteInt16(5);
 	s.WriteInt16(S_BROCAST_GUILD_FLAG);
-
-	s.WriteInt16(0);
-	s.WriteInt16(8);
-	s.WriteInt16(8);
-
-	s.WritePos(0);
-
+	s.WriteByte(0);
 	c->Send(s._raw, s._size);
 	s.Clear();
 }

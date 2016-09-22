@@ -6,10 +6,10 @@ RStrEvaluateList::RStrEvaluateList() : SendPacket(C_STR_EVALUATE_LIST)
 {
 }
 
-void RStrEvaluateList::Process(OpCode opCode, Stream * stream, Client * caller)
+void RStrEvaluateList::Process(OpCode opCode, Stream * stream, Client * caller) const
 {
-	stream->_pos = 18;
-	std::string newName = stream->ReadReceivedString();
+	stream->_pos = 22;
+	std::string newName = stream->ReadUTF16StringBigEdianToASCII();
 	bool nameGood = PlayerService::CheckPlayerNameForm(newName);
 
 	stream->Clear();

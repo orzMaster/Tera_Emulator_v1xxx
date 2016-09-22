@@ -19,17 +19,14 @@ public:
 	const bool Stop();
 	const bool IsValid();
 private:
-	static void Listen(SOCKET& socket, Server* instance);
-
-
-
+	static void Listen(Listener* linstance, Server* instance);
 private:
 
 	const unsigned int _maxClients, _port;
 	const char* _ip;
-	static bool _listen;
-	static bool _listening;
-	static bool _initialized;
+	bool _listen;
+	bool _listening;
+	bool _initialized;
 	std::thread _listenerThread;
 	SOCKET _listeningSocket;
 

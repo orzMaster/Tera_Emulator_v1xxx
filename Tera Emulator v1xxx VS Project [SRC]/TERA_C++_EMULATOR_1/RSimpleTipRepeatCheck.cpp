@@ -5,7 +5,7 @@ RSimpleTipRepeatCheck::RSimpleTipRepeatCheck() : SendPacket(C_SIMPLE_TIP_REPEAT_
 {
 }
 
-void RSimpleTipRepeatCheck::Process(OpCode opCode, Stream * data, Client * caller)
+void RSimpleTipRepeatCheck::Process(OpCode opCode, Stream * data, Client * caller)const
 {
 	int tip = data->ReadInt32();
 

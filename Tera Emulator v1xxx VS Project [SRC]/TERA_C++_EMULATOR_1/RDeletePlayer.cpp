@@ -4,19 +4,19 @@ RDeletePlayer::RDeletePlayer() : SendPacket(C_DELETE_USER)
 {
 }
 
-void RDeletePlayer::Process(OpCode opCode, Stream * data, Client * caller)
+void RDeletePlayer::Process(OpCode opCode, Stream * data, Client * caller)const
 {
 	int id = data->ReadInt32();
 	bool result = false;
-	Player * p = caller->_account->GetPlayer(id);
+	Player * p = caller->GetAccount()->GetPlayerByLobbyId(id);
 	if (p)
 	{
-		if (caller->_account->GetPlayer(id)->_level > 40)
+		if (p->_stats._level > 40)
 		{
-			caller->_account->GetPlayer(id)->_banTimeUTC = ServerTimer::GetCurrentUTC() + 86400; //1 day
+			p->_banTimeUTC = ServerTimer::GetCurrentUTC() + 86400; //1 day
 		}
 		else
-			caller->_account->GetPlayer(id)->_toDelete = true;
+			p->_toDelete = 1;
 
 		result = true;
 	}

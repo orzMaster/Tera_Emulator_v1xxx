@@ -6,56 +6,81 @@
 #include "Crypt\data_type.hpp"
 #include "PlayerEnums.h"
 #include "ItemEnum.h"
+#include "Entity.h"
 
-
-class IItem
+class IItem : public Entity
 {
-	struct Abnormality
-	{
-		int id;
-		float value;
-	};
 public:
 	IItem();
 	~IItem();
-
 	int operator ()(int);
-	IItem * Clone();
 
-	int _id;
-	std::string _name;
+	int
+		_minAtk,
+		_maxAtk,
+		_impact,
+		_def,
+		_id,
+		_sortingNumber,
+		_itemLevel,
+		_requiredLevel,
+		_passivityLinkG,
+		_maxStack,
+		_rank,
+		_coolTimeGroup,
+		_slotLimit,
+		_buyPrice,
+		_sellPrice,
+		_countOfSlot,
+		_coolTime;
+
+
+	EquipmentPart _part;
+	ItemType _combatItemType;
+	ItemCategory _category;
 	ItemType _type;
-	int _itemLevel;
-	int _requiredLevel;
-	int _maxStack;
-	byte _tradable;
-	ItemRareGrade _rareGrade;
-	byte _sellable;
-	int _sellPrice;
-	byte _static;
-	byte _warehouseStoreable;
-	byte _usable;
-	byte _useOnlyByGender;
-	byte _useOnlyByRace;
-	byte _bankStorable;
-	byte _guildBankStorable;
-	byte _useOnlyByClass;
-	std::vector<int> _requiredClassList;
-	int _stackCount;
-	int _feedStock;
-	int _crystals[4];
-	byte _hasBonus;
-	std::vector<int> _bonusList;
-	int _buyPrice;
-	int _coolTime;
-	byte _enchantEnabled;
+	ItemType _requiredEquipmentType;
 	ItemGrade _itemGrade;
-	int _enchantLevel;
-	byte _masterworkGrade;
-	int _attackModifier;
-	int _defenseModifier;
-	byte _gender;
-	byte _hasEffect;
-	std::vector<int> _effectList;
+	ItemRareGrade _rareGrade;
+	ItemBoundType _bountType;
+
+	float
+		_masterpieceRate;
+
+	byte
+		_changeColorEnable,
+		_changeLook,
+		_tradable,
+		_warehouseStoreable,
+		_destroyable,
+		_dismantlable,
+		_sellable,
+		_obtainable,
+		_artisanable,
+		_useOnlyByGender,
+		_useOnlyTerritory,
+		_useOnlyByRace,
+		_hasBonus,
+		_bankStorable,
+		_guildBankStorable,
+		_useOnlyByClass;
+
+	std::string
+		_linkMasterpieceEnchantId,
+		_linkCrestId,
+		_linkCustomizingId,
+		_linkEnchantId,
+		_linkEquipmentId,
+		_linkLookInfoId,
+		_linkPetAdultId,
+		_linkPetOrbId,
+		_linkMasterpiecePassivityCategoryId,
+		_linkPassivityCategoryId,
+		_linkPassivityId,
+		_requiredClass,
+		_name,
+		_linkSkillId;
+
+
 };
 #endif

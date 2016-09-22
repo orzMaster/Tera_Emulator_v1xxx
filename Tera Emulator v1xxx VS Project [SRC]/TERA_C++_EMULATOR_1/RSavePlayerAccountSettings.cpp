@@ -4,16 +4,18 @@ RSavePlayerAccountSettings::RSavePlayerAccountSettings() : SendPacket(C_SAVE_CLI
 {
 }
 
-void RSavePlayerAccountSettings::Process(OpCode opCode, Stream * stream, Client * caller)
+void RSavePlayerAccountSettings::Process(OpCode opCode, Stream * stream, Client * caller)const
 {
-	if (caller->_account->_accountSettings)
-	{
-		delete caller->_account->_accountSettings;
-		caller->_account->_accountSettings = 0;
-	}
-	caller->_account->_accountSettingsSize = (unsigned short)stream->_size;
-	caller->_account->_accountSettings = new byte[stream->_size];
-	stream->Read(caller->_account->_accountSettings, stream->_size);
+	Account * a = nullptr;
+	if (!(a = caller->GetAccount()))
+		return;
 
-	//after this packet it crushes....the crypt system [was]
+	if (a->_accountSettings)
+	{
+		delete a->_accountSettings; a->_accountSettings = 0;
+		a->_accountSettings = 0;
+	}
+	a->_accountSettingsSize = (unsigned short)stream->_size;
+	a->_accountSettings = new byte[stream->_size];
+	stream->Read(a->_accountSettings, stream->_size);
 }

@@ -1,4 +1,4 @@
-#include "RSelectPlayer.h"
+﻿#include "RSelectPlayer.h"
 #include "Client.hpp"
 #include "Account.hpp"
 #include "Player.hpp"
@@ -11,221 +11,206 @@
 #include "CraftingSystem.h"
 #include "UnionSystem.h"
 #include "Area.h"
+#include "Inventory.h"
+#include "ItemEnum.h"
 
 RSelectPlayer::RSelectPlayer() : SendPacket(C_SELECT_USER)
 {
 }
 
-void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)
+void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)const
 {
-	
-	int lobbyId = data->ReadInt32();
-	Player * p = caller->_account->GetPlayer(lobbyId);
-	bool result = !p ? false : true;
-	caller->_account->_selectedPlayer = p;
+	int lobbyid = data->ReadInt32();
+	Player * p = caller->GetAccount()->SelectPlayer(lobbyid);
+	Inventory * iv = p->_inventory;
 
 	data->Clear();
 	data->WriteInt16(16);
 	data->WriteInt16(S_SELECT_USER);
-	data->WriteInt32(result == true ? 1 : 0);
+	data->WriteInt32(p == 0 ? 0 : 1);
 	data->WriteInt64(0);
 	caller->Send(data);
 	data->Clear();
-	if (!result)
+	if (!p)
 		return;
 
 
-	//data->WriteHexString("0B00199402000000000000"); //S_UPDATE_CONTENTS_ON_OFF [2]
-	//caller->Send(data);
-	//data->Clear();
-
-	//data->WriteHexString("0B00199403000000000000"); //S_UPDATE_CONTENTS_ON_OFF [3]
-	//caller->Send(data);
-	//data->Clear();
-
-	//data->WriteHexString("0B00199404000000000000"); //S_UPDATE_CONTENTS_ON_OFF [4]
-	//caller->Send(data);
-	//data->Clear();
-
-	//data->WriteHexString("0B00199408000000000000"); //S_UPDATE_CONTENTS_ON_OFF [8]
-	//caller->Send(data);
-	//data->Clear();
-
-	//data->WriteHexString("0B00199409000000000000"); //S_UPDATE_CONTENTS_ON_OFF [9]
-	//caller->Send(data);
-	//data->Clear();
-
 	GuildSystem::BrodcastGuildFlag(caller);
 	UnionSystem::SendElectionState(caller);
+
+	data->WriteInt16(8);
+	data->WriteInt16(S_ONGOING_HUNTING_EVENT_LIST);
+	data->WriteInt32(0);
+	caller->Send(data);
+	data->Clear();
+
 #pragma region S_LOGIN
 
 	data->WriteInt16(0);
 	data->WriteInt16(S_LOGIN);
 
-	short name_pos = data->_pos;
-	data->WriteInt16(0); // name offset
-	short details1_pos = data->_pos;
-	data->WriteInt16(0);// details1 offset
-	data->WriteInt16(32); //details1 count 
-	short details2_pos = data->_pos;
-	data->WriteInt16(0); // details2 offset
-	data->WriteInt16(64); //details2 count
+	short name_pos = data->NextPos();
 
+	short details1_pos = data->NextPos();
+	data->WriteInt16(32);
+
+	short details2_pos = data->NextPos();
+	data->WriteInt16(64);
 
 	data->WriteInt32(p->_model);
 
-	//data->WriteInt16(6516);    //unk 0x7419
-	//data->WriteInt16(4012);    //unk 0xac0f
-	//data->WriteInt16(32768);   //unk 0x0080
-	//data->WriteInt16(256);     //unk 0x0001
+	data->WriteInt32(p->_entityId); //player id
+	data->WriteInt32(p->_subId);    //player sub id
+	data->WriteInt32(20 + SERVER_ID);	//server id
+	data->WriteInt32(p->_lobbyId);  //lobby  id
 
-	data->WriteInt32(caller->_entityId);
-	data->WriteInt32(caller->_account->_selectedPlayer->_entityId);
-
-	data->WriteInt32(SERVER_ID); //server id
-	data->WriteInt32(0);
-
-	
-	data->WriteInt32(0); 
-	data->WriteByte(1);
-	data->WriteInt32(0);
-	data->WriteInt32(50);
-	data->WriteInt32(110);
+	data->WriteInt32(0);   //unk
+	data->WriteByte(p->_stats.GetHP() > 0 ? 1 : 0);
+	data->WriteInt32(0);   //unk
+	data->WriteInt32(50);  //unk
+	data->WriteInt32(110); //unk
 	data->Write(p->_data, 8); //int64 data [appearance]
 
-	data->WriteInt16(1);
-	data->WriteInt16(p->_level);
+	data->WriteInt16(1); //unk
+	data->WriteInt16(p->_stats._level);
 
-	data->WriteInt32(130); //mining
-	data->WriteInt16(130);	//plants 
-	data->WriteInt16(130);	 //energy
+	data->WriteInt16(1);	//mining
+	data->WriteInt16(0);	//0
+	data->WriteInt16(1);	//plants 
+	data->WriteInt16(1);	//energy
 
-	data->WriteInt32(1);
-	data->WriteInt16(0);
+	data->WriteInt32(1);	//unk
+	data->WriteInt16(0);	//unk
 
-	data->WriteInt32(0);
-
-
-	data->WriteInt64(p->_exp);
+	data->WriteInt32(0);    //unk
+	
+	data->WriteInt64(p->_exp); //rested exp?
 	data->WriteInt64(p->_exp); //player exp
-	data->WriteInt64(10000); //next level exp
+	data->WriteInt64(840); //next level exp
 
-	data->WriteInt32(0);	  //unk items ??
-	data->WriteInt32(0);	  //unk items ??
-	data->WriteInt32(0);	  //unk items ??
-	data->WriteInt32(0); 	  //unk items ??
-							  //unk items ??
-	data->WriteInt32(59778717); //rested exp1
-	data->WriteInt32(59778717); //rested exp2
-	data->WriteInt32(1065353216);	 //unk exp ??
-	data->WriteInt32(0);	 //----------------------------------------------------------to delete-------------------------------
+	data->WriteInt64(0);	//unk
+	data->WriteInt64(0);	//unk
+	data->WriteInt32(0x04BD0768); //restedCurrent
+	data->WriteInt32(0x04BD0768); //restedMax
+	data->WriteFloat(1);	//unk
+	data->WriteInt32(0);	//unk
 
+	data->WriteInt32((*iv)[PROFILE_WEAPON]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_ARMOR]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_GLOVES]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_BOOTS]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_INNERWARE]->_info->_itemId); //unk
+	data->WriteInt32((*iv)[PROFILE_HEAD_ADRONMENT]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_MASK]->_info->_itemId);
 
-	data->WriteInt32(p->_playerWarehouse->weapon);
-	data->WriteInt32(p->_playerWarehouse->armor);
-	data->WriteInt32(p->_playerWarehouse->gloves);
-	data->WriteInt32(p->_playerWarehouse->boots);
+	data->WriteInt64(0x0B59F357); //creation time ?
+	data->WriteInt64(1); //unk
+	data->WriteByte(0); //unk
 
-	data->WriteInt32(p->_playerWarehouse->innerWare);
-	data->WriteInt32(p->_playerWarehouse->skin1); //head
-	data->WriteInt32(p->_playerWarehouse->skin2); //face
+	data->WriteInt32(0); //reaper? 03 00 00 00 în cazul în care 3, cuvintele "Îngerul Morții"
+	data->WriteInt32(0); 
 
-	data->WriteInt64(p->_creationTimeUTC); //unk16
-	data->WriteInt32(1); //title
+	data->WriteInt32(0);  // 00 00 00 00
+	data->WriteInt32(0);  // 00 00 00 00
+	data->WriteInt32(0);  // 00 00 00 00
+	data->WriteInt32(0);  // 00 00 00 00
 
-	data->WriteInt64(191429903); //unk16 // 0FFD680B
+	data->WriteInt32(0);  // 00 00 00 00
+	data->WriteInt32(0);  // 00 00 00 00
+	data->WriteInt32(0);  // 00 00 00 00
+	data->WriteInt32(0);  // 00 00 00 00
 
-	data->WriteInt32(0); //weaponModel
-	data->WriteInt32(0); //chestModel
-	data->WriteInt32(0); //glovesModel
-	data->WriteInt32(0); //bootsModel
-	data->WriteInt32(0); //unk19
-	data->WriteInt32(0); //unk20
+	data->WriteInt32(0);  // 00 00 00 00
+	data->WriteInt32(0);  // 00 00 00 00
+	data->WriteInt32(0);  // 00 00 00 00
 
-	data->WriteInt32(0); //unk21
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
+	data->WriteByte((*iv)[PROFILE_WEAPON]->_info->_enchantLevel);
+	data->WriteByte((*iv)[PROFILE_ARMOR]->_info->_enchantLevel);
+	data->WriteByte((*iv)[PROFILE_GLOVES]->_info->_enchantLevel);
+	data->WriteByte((*iv)[PROFILE_BOOTS]->_info->_enchantLevel);
 
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-
-	data->WriteInt16(0);
-	data->WriteInt16(0);
-	data->WriteInt16(0);
-	data->WriteInt16(0);
-	data->WriteInt16(0);
-	data->WriteInt16(0);
-
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt16(0);
-
-	data->WriteByte(1);
-
-	data->WriteInt32(0);  //armor skin
-	data->WriteInt32(0); 	//skins ??
-	data->WriteInt32(0); 	//skins ??
-	data->WriteInt32(0); 	//skins ??
-	data->WriteInt32(0);	//skins ??
-							//skins ??
-	data->WriteInt32(1);
-	data->WriteInt32(0); //unk 30
-
-	data->WriteInt16(25600);
-
-	data->WriteInt32(0);
+	data->WriteByte(0);
+	data->WriteInt32(0); // 78 00 00 00 .//karma player.get Karma ()
 	data->WriteByte(0);
 
+	data->WriteInt32((*iv)[PROFILE_SKIN_HEAD]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_SKIN_FACE]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_SKIN_BACK]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_SKIN_WEAPON]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_SKIN_BODY]->_info->_itemId);
+	data->WriteInt32(0); //unk
+
+	data->WriteInt32(0); // 00 00 00 00
+	data->WriteInt32(0); // 00 00 00 00
+	data->WriteInt32(0); // 00 00 00 00
+
+	data->WriteInt32(1); // 01 00 00 00
+	data->WriteInt32(0); // 00 00 00 00
+	data->WriteByte(0);	
+
+	data->WriteInt32(100); 
+	data->WriteFloat(1.0f);
+
+	data->WriteByte(0);	 
+	data->WriteInt32(0); 
+	 
+	data->WriteInt32(0); //unk
 
 	data->WritePos(name_pos);
 	data->WriteString(p->_name);
 
 	data->WritePos(details1_pos);
 	data->Write(p->_details1, 32);
+
 	data->WritePos(details2_pos);
 	data->Write(p->_details2, 64);
-
-	data->WriteInt16(0);//unk 0 0
-
 
 	data->WritePos(0);
 	caller->Send(data);
 	data->Clear();
 #pragma endregion
 
-#pragma region S_SKILL_LIST
-	//data->WriteInt16(0);
-	//data->WriteInt16(S_SKILL_LIST);
-
-	//data->WriteInt16(p->_skillList.size());
-	//data->WriteInt16(8);
-	//data->WriteInt16(8);
-	//Skill* sk = nullptr;
-	//for (size_t i = 0; i < p->_skillList.size(); i++)
-	//{
-	//	sk = p->_skillList[i];
-
-	//	data->WriteInt16(sk->unk1);
-	//	data->WriteInt32(sk->_skillId);
-	//	data->WriteInt16(sk->unk2);
-	//	data->WriteInt16(sk->unk3);
-	//}
-
-	////data->WriteHexString("090008000800120074270000010012001C00844E000001001C002600A49C0000010026003000C4A28900010030003A00D4C9890001003A00440095A69903010044004E001127000000004E0058002C4C00000000580000002D4C00000000");
-
-	//data->WritePos(0);
+	data->WriteInt16(8);
+	data->WriteInt16(S_SHOW_NPC_TO_MAP);
+	data->WriteInt32(0);
 	//caller->Send(data);
-	//data->Clear();
+	data->Clear();
+
+	p->_inventory->SendInventory(caller, 0,false);
+
+#pragma region S_SKILL_LIST
+	data->WriteInt16(10);
+	data->WriteInt16(S_SKILL_LIST);
+	data->WriteInt16(0);
+	data->WriteInt16(8);
+	data->WriteInt16(8);
+	caller->Send(data);
+	data->Clear();
 #pragma endregion
 
+	//todo S_SKILL_CATEGORY
+
+	data->WriteInt16(8);
+	data->WriteInt16(S_AVAILABLE_SOCIAL_LIST);
+	data->WriteInt32(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(6);
+	data->WriteInt16(S_CLEAR_QUEST_INFO);
+	data->WriteInt16(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(11);
+	data->WriteInt16(S_DAILY_QUEST_COMPLETE_COUNT);
+	data->WriteInt16(0);
+	data->WriteInt32(20);
+	data->WriteByte(0);
+	caller->Send(data);
+	data->Clear();
 
 
-#pragma region S_ARTISAN_SKILL_LIST
 	data->WriteInt16(0);
 	data->WriteInt16(S_ARTISAN_SKILL_LIST);
 	data->WriteInt32(0); //count
@@ -233,15 +218,23 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)
 	data->WritePos(0);
 	caller->Send(data);
 	data->Clear();
-#pragma endregion
 
+	data->WriteInt16(12);
+	data->WriteInt16(S_ARTISAN_RECIPE_LIST);
+	data->WriteInt32(0);
+	data->WriteInt16(256);
+	data->WriteInt16(0);
+	caller->Send(data);
+	data->Clear();
 
 	data->WriteInt16(0);
 	data->WriteInt16(S_NPCGUILD_LIST);
 	data->WriteInt16(0); //npc guild count [faction]
 	short unk_pos = data->_pos;
-	data->WriteInt32(caller->_entityId);
+
 	data->WriteInt32(p->_entityId);
+	data->WriteInt32(p->_subId);
+
 	data->WritePos(unk_pos);
 	data->WriteInt32(0); //region
 	data->WriteInt32(0); //faction
@@ -252,9 +245,6 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)
 	caller->Send(data);
 	data->Clear();
 
-	//data->WriteHexString("520049C00500160001000000000000003C000000000016002200000000000000000022002E00FFFFFFFF000000002E003A00FFFFFFFF000000003A004600FFFFFFFF0000000046000000FFFFFFFF00000000");
-	//owner->Send(data->_raw, data->_size); // S_PET_INCUBATOR_INFO_CHANGE
-	//data->Clear();
 
 	data->WriteInt16(4);
 	data->WriteInt16(S_PET_INFO_CLEAR);
@@ -274,45 +264,176 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)
 	caller->Send(data);
 	data->Clear();
 
+	data->WriteInt16(8);
+	data->WriteInt16(S_MY_DESCRIPTION);
+	data->WriteInt32(6);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(28);
+	data->WriteInt16(S_F2P_PremiumUser_Permission);
+	data->WriteInt16(1);
+	data->WriteInt16(20);
+	data->WriteInt32(5);
+
+	data->WriteFloat(1);
+	data->WriteFloat(1);
+
+	data->WriteInt32(20);
+	data->WriteInt32(1);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(28);
+	data->WriteInt16(S_MASSTIGE_STATUS);
+	data->WriteInt32(0); //D9 63 01 00
+	data->WriteInt32(0);
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+	caller->Send(data);
+	data->Clear();
+
+
+#pragma region S_USER_ITEM_EQUIP_CHANGER
+	short nextPos = 0; int changer[] = { 1,3,4,5,6,7,8,9,10,11,19,20 };
+
+	data->WriteInt16(0);
+	data->WriteInt16(S_USER_ITEM_EQUIP_CHANGER);
+
+	data->WriteInt16(12); //count
+	nextPos = data->NextPos();
+
+	data->WriteInt32(p->_entityId);
+	data->WriteInt32(p->_subId);
+
+	for (size_t i = 0; i < 12; i++)
+	{
+		data->WritePos(nextPos);
+		data->WriteInt16(data->_pos); //base offset
+		nextPos = data->NextPos();
+		data->WriteInt64(changer[i]);
+	}
+
+	data->WritePos(0);
+	caller->Send(data);
+	data->Clear();
+#pragma endregion
+#pragma region S_USER_EXTERNAL_CHANGE
+	//equiped items
+	data->WriteInt16(0);
+	data->WriteInt16(S_USER_EXTERNAL_CHANGE);
+
+	data->WriteInt32(p->_entityId);
+	data->WriteInt32(p->_subId);
+
+	data->WriteInt32((*iv)[PROFILE_WEAPON]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_ARMOR]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_GLOVES]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_BOOTS]->_info->_itemId);
+
+
+	data->WriteInt32((*iv)[PROFILE_INNERWARE]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_MASK]->_info->_itemId); //head
+	data->WriteInt32((*iv)[PROFILE_HEAD_ADRONMENT]->_info->_itemId); //face
+
+
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+
+	data->WriteByte((*iv)[PROFILE_WEAPON]->_info->_enchantLevel);
+	data->WriteByte((*iv)[PROFILE_ARMOR]->_info->_enchantLevel);
+	data->WriteByte((*iv)[PROFILE_GLOVES]->_info->_enchantLevel);
+	data->WriteByte((*iv)[PROFILE_BOOTS]->_info->_enchantLevel);
+
+
+	data->WriteInt32((*iv)[PROFILE_SKIN_HEAD]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_SKIN_FACE]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_SKIN_BACK]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_SKIN_WEAPON]->_info->_itemId);
+	data->WriteInt32((*iv)[PROFILE_SKIN_BODY]->_info->_itemId);
+
+	data->WriteInt32(0); //costume dye
+	data->WriteByte(1); //enables skin, hair adornment, mask, and costume (back is always on)
+
+	data->WritePos(0);
+	caller->Send(data);
+	data->Clear();
+#pragma endregion
+
+	data->WriteInt16(10);
+	data->WriteInt16(S_FESTIVAL_LIST);
+	data->WriteInt16(0);//count
+	data->WriteInt16(8);
+	data->WriteInt16(8);
+	caller->Send(data);
+	data->Clear();
 
 	data->WriteInt16(21);
 	data->WriteInt16(S_LOAD_TOPO);
-	data->WriteInt32(caller->_account->_selectedPlayer->_position->_areaId);
-	data->WriteFloat(caller->_account->_selectedPlayer->_position->_X);
-	data->WriteFloat(caller->_account->_selectedPlayer->_position->_Y);
-	data->WriteFloat(caller->_account->_selectedPlayer->_position->_Z);
+	data->WriteInt32(p->_position->_continentId);
+	data->WriteFloat(p->_position->_X);
+	data->WriteFloat(p->_position->_Y);
+	data->WriteFloat(p->_position->_Z);
 	data->WriteByte(0);
 	caller->Send(data);
 	data->Clear();
 
-	data->WriteInt16(0);
+	data->WriteInt16(8);
 	data->WriteInt16(S_LOAD_HINT);
-	data->WriteInt32(0); //unk
-	data->WritePos(0);
+	data->WriteInt32(0);
+	caller->Send(data);
+	data->Clear();
+
+	StatsService::SendPlayerStats(caller, false);
+
+	data->WriteInt16(9);
+	data->WriteInt16(S_ACCOUNT_BENEFIT_LIST);
+	data->WriteInt32(0);
+	data->WriteByte(0);
 	caller->Send(data);
 	data->Clear();
 
 	data->WriteInt16(16);
 	data->WriteInt16(S_SEND_USER_PLAY_TIME);
-	data->WriteInt32(p->_entityId);
-	data->WriteInt64(3790); //player online time
+	data->WriteInt32(p->_lastOnlineUTC);
+	data->WriteInt64(0);
+	caller->Send(data);
+	data->Clear();
+
+
+	data->WriteInt16(6);
+	data->WriteInt16(S_CLEAR_WORLD_QUEST_VILLAGER_INFO);
+	data->WriteInt16(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(12);
+	data->WriteInt16(S_PCBANGINVENTORY_DATALIST);
+	data->WriteInt64(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(12);
+	data->WriteInt16(S_FATIGABILITY_POINT);
+	data->WriteInt32(1);
+	data->WriteInt32(4000);
 	caller->Send(data);
 	data->Clear();
 
 	data->WriteInt16(44);
 	data->WriteInt16(S_LOAD_EP_INFO);
-	data->WriteInt32(0); //unk
-	data->WriteInt32(0); //unk
-	data->WriteInt32(0); //unk
-	data->WriteInt32(0); //unk
-	data->WriteInt32(0); //unk
-	data->WriteInt32(0); //unk
-	data->WriteInt32(0); //unk
-	data->WriteInt32(0); //unk
-	data->WriteInt32(0); //unk
-	data->WriteInt32(0); //unk
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+	data->WriteInt64(0);
+	data->WriteInt64(0);
 	caller->Send(data);
 	data->Clear();
+
 }
 
 

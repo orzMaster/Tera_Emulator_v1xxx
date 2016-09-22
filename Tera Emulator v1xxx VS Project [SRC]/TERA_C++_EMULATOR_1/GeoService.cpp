@@ -15,7 +15,7 @@ WorldPosition * GeoService::GetRandom(HuntingZone * zone)
 	out->_Y = 0;
 
 	out->_heading = 0;
-	out->_areaId = zone->_area->_startPosition->_areaId;
+	out->_continentId = zone->_area->_continentId;
 	
 
 	return out;

@@ -104,14 +104,27 @@ std::string FileStream::ReadASCIIString()
 	{
 		if (_raw[i] != 0x00)
 		{
-			if (_raw[i] != '\n' && _raw[i] != 0x0e)
-				out += (char)_raw[i];
+			out += (char)_raw[i];
 			kk++;
 		}
 		else
 			break;
 	}
 	_pos += kk;
+	return out;
+}
+
+std::string FileStream::ReadUnicodeString()
+{
+	std::string out;
+	for (size_t i = _pos; i < _size; i += 2)
+	{
+		if (_raw[i] == 0x00 && _raw[i + 1] == 0x00)
+			break;
+		out +=_raw[i];
+	}
+	_pos += (out.size() * 2) + 2;
+
 	return out;
 }
 

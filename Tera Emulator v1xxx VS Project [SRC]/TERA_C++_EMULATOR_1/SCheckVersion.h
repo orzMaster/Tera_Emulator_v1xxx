@@ -8,6 +8,6 @@ class SCheckVersion : public SendPacket
 public:
 	SCheckVersion();
 
-	virtual void Process(OpCode opCode, Stream * data, Client * caller) override;
+	virtual void Process(OpCode opCode, Stream * data, Client * caller) const override;
 };
 #endif

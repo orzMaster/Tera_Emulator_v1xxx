@@ -4,7 +4,7 @@ RNotifyLocationInAction::RNotifyLocationInAction() : SendPacket(C_NOTIFY_LOCATIO
 {
 }
 
-void RNotifyLocationInAction::Process(OpCode opCode, Stream * stream, Client * caller)
+void RNotifyLocationInAction::Process(OpCode opCode, Stream * stream, Client * caller)const
 {
 	int skill = stream->ReadInt32();
 	int unk1 = stream->ReadInt32();

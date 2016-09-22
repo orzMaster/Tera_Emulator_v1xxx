@@ -5,7 +5,7 @@ RUpdateContentsPlayTime::RUpdateContentsPlayTime() : SendPacket(C_UPDATE_CONTENT
 {
 }
 
-void RUpdateContentsPlayTime::Process(OpCode opCode, Stream * data, Client * caller)
+void RUpdateContentsPlayTime::Process(OpCode opCode, Stream * data, Client * caller)const
 {
 	//todo
 }

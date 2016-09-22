@@ -6,5 +6,5 @@ class Entity
 public :
 	Entity();
 	virtual ~Entity();
-	unsigned long long _entityId;
+	unsigned int _entityId;
 };

@@ -1,10 +1,9 @@
 #ifndef ITEMENUM_H
 #define ITEMENUM_H
 
-
-enum ItemCategory
+enum ItemCategory : short
 {
-	combat,
+	combat = 1,
 	magical,
 	custormaize,
 	pkitem,
@@ -30,6 +29,9 @@ enum ItemCategory
 	bow,
 	staff,
 	rod,
+	blaster,
+	gauntlet,
+	shuriken,
 	accessoryHair,
 	weaponMaterial,
 	armorMaterial,
@@ -69,15 +71,17 @@ enum ItemCategory
 	style_circle,
 	style_bow,
 	style_staff,
-	style_rod
+	style_rod,
+	belt,
+	brooch
 };
 
-enum ItemResourceType
+enum ItemResourceType : byte
 {
 	small
 };
 
-enum CombatItemType
+enum ItemType : short
 {
 	DISPOSAL,
 	CUSTOM,
@@ -112,27 +116,102 @@ enum CombatItemType
 	CREST,
 	RECIPE,
 	EQUIP_STYLE_ACCESSORY,
-	EQUIP_STYLE_WEAPON
+	EQUIP_STYLE_WEAPON,
+	EQUIP_STYLE_BODY,
+	EQUIP_STYLE_BACK,
 };
 
-enum ItemType : int
+enum ItemBoundType :byte
 {
+	BOUND_NONE,
+	BOUND_EQUIP,
+	BOUND_PICK_UP,
+	BOUND_LOOT
+};
+
+enum ItemRareGrade : byte
+{
+	RARE_GRADE_NORMAL = 0,
+	RARE_GRADE_UNCOMMON = 1,
+	RARE_GRADE_RARE = 2,
+	RARE_GRADE_SUPERIOR = 3
+};
+
+enum ItemGrade : byte
+{
+	GRADE_NORMAL = 0,
+	GRADE_MASTERWORK = 1,
+	GRADE_AWAKENED = 2
+};
+
+enum PROFILE_SLOT_TYPE : int
+{
+	PROFILE_WEAPON = 1,
+
+	PROFILE_ARMOR = 3,
+	PROFILE_GLOVES = 4,
+	PROFILE_BOOTS = 5,
+	PROFILE_EARRING_L = 6,
+	PROFILE_EARRING_R = 7,
+	PROFILE_RING_L = 8,
+	PROFILE_RING_R = 9,
+	PROFILE_NECKLACE = 10,
+
+	
+	PROFILE_BROOCH,
+	PROFILE_INNERWARE,
+	PROFILE_MASK,
+	PROFILE_HEAD_ADRONMENT,
+
+	PROFILE_SKIN_BODY,
+	PROFILE_SKIN_WEAPON,
+	PROFILE_SKIN_FACE,
+	PROFILE_SKIN_BACK,
+	PROFILE_SKIN_HEAD,
+
+	PROFILE_BELT = 19,
+
+	//PROFILE_WEAPON = 73,
+	//PROFILE_ARMOR = 74,
+	//PROFILE_GLOVES = 75,
+	//PROFILE_BOOTS = 76,
+	//PROFILE_RING_L = 77,
+	//PROFILE_RING_R = 78,
+	//PROFILE_EARRING_L = 79,
+	//PROFILE_EARRING_R = 80,
+	//PROFILE_NECKLACE = 81,
+	//PROFILE_BELT = 82,
+	//PROFILE_BROCH = 83,
+	//PROFILE_INNERWARE = 84,
+	//PROFILE_MASK = 86,
+	//PROFILE_HEAD_ADRONMENT = 87,
+	//
+	//PROFILE_SKIN_BODY = 88,
+	//PROFILE_SKIN_WEAPON = 89,
+	//PROFILE_SKIN_FACE = 90,
+	//PROFILE_SKIN_BACK = 91,
+	//PROFILE_SKIN_HEAD = 91
 
 };
 
-enum ItemRareGrade : int
+enum EquipmentPart
 {
-	NORMAL = 0,
-	UNCOMMON = 1,
-	RARE = 2,
-	SUPERIOR = 3
-};
-
-enum ItemGrade : int
-{
-	INORMAL = 0,
-	MASTERWORK = 1,
-	AWAKENED = 2
+	E_BELT,
+	E_FINGER,
+	E_FEET,
+	E_HAND,
+	E_BODY,
+	E_UNDERWEAR,
+	E_EAR,
+	E_BROOCH,
+	E_NECK,
+	E_ACCESSORYFACE,
+	E_ACCESSORYHAIR,
+	E_STYLE_FACE,
+	E_STYLE_HAIR,
+	E_STYLE_WEAPON,
+	E_STYLE_BODY,
+	E_STYLE_BACK,
 };
 
 #endif

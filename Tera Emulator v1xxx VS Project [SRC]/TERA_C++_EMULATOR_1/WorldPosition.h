@@ -9,15 +9,17 @@ class Vector3D;
 class WorldPosition
 {
 public:
-	int _areaId;
-	float _X;
-	float _Y;
-	float _Z;
+	int
+		_continentId,
+		_worldMapSectionId,
+		_worldMapGuardId,
+		_worldMapWorldId;
+		
+	float _X,_Y,_Z;
 	short _heading;
-
 public:
 	WorldPosition();
-	WorldPosition(float x, float y, float z, short heading, short areaId);
+	WorldPosition(float x, float y, float z, short heading, int continentId,int worldMapSectionId,int worldMapGuardId,int worldMapWorldId);
 
 	double DistanceTo(float x, float y);
 	double DistanceTo(float x, float y, float z);

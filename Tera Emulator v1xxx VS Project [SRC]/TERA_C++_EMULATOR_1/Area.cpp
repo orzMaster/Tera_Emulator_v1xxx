@@ -4,14 +4,20 @@
 #include "Account.hpp"
 #include "HuntingZone.h"
 #include "EffectZone.h"
+#include "Vector3.hpp"
+#include "Drop.h"
+#include "OpCodesEnum.h"
+#include "Stream.h"
+#include "BroadcastService.h"
 
-Area::Area()
+
+Area::Area() : Entity()
 {
-	_run = _running = false;
+	_mainRun = _running = false;
 	_edit = false;
+	_startPosition = 0;
+	_playersCount = 0;
 }
-
-
 Area::~Area()
 {
 	CloseArea();
@@ -32,15 +38,6 @@ Area::~Area()
 	}
 	_worldObjects.clear();
 
-	for (size_t i = 0; i < _projectiles.size(); i++)
-	{
-		if (_projectiles[i])
-		{
-			delete _projectiles[i];
-			_projectiles[i] = 0;
-		}
-	}
-	_projectiles.clear();
 
 	for (size_t i = 0; i < _effectsZones.size(); i++)
 	{
@@ -66,31 +63,39 @@ Area::~Area()
 		delete _startPosition;
 		_startPosition = 0;
 	}
+
+	for (size_t i = 0; i < _sections.size(); i++)
+	{
+		if (_sections[i])
+		{
+			delete _sections[i];
+			_sections[i] = 0;
+		}
+	}
+	_sections.clear();
+
+	for (size_t i = 0; i < _drop.size(); i++)
+	{
+		if (_drop[i])
+		{
+			delete _drop[i];
+			_drop[i] = nullptr;
+		}
+	}
+
 }
 
 const bool Area::Initialize()
 {
-
-	for (size_t i = 0; i < _huntingZones.size(); i++)
-	{
-		if (_huntingZones[i] && !_huntingZones[i]->Initialize())
-		{
-			return false;
-		}
-	}
-
-	for (size_t i = 0; i < _effectsZones.size(); i++)
-	{
-		if (_effectsZones[i] && !_effectsZones[i]->Intialize())
-			return false;
-	}
+	if (_sections.size() >= 1)
+		_startWorldMapSectionId = _sections[0]->worldMapSectionId;
 
 	return true;
 }
 
-const bool Area::Lock()
+void Area::Lock()
 {
-	return _lockMutex.try_lock();
+	_lockMutex.lock();
 }
 
 void Area::Unlock()
@@ -98,86 +103,256 @@ void Area::Unlock()
 	_lockMutex.unlock();
 }
 
-void Area::ChangeArea(Client * client, Area * area)
+WorldPosition * Area::GetStartPosition()
 {
-	Player * p = 0;
-	while (!(p = client->LockPlayer()))
-		continue;
-
-	this->ExitArea(client);
-	area->EnterArea(client);
-
-	client->UnlockPlayer();
+	return _startPosition->ToWorldPosition(_startHeading, _continentId, 599001, _worldMapGuardId, _worldMapWorldId); //599001  Stepstone Isle
 }
 
+const bool Area::ChangeArea(Client * client, Area * area)
+{
+	Player * p = 0;
+	if (!(p = client->GetSelectedPlayer()))
+		return false;
+
+	this->ExitArea(client);
+	return area->EnterArea(client);
+}
 void Area::CloseArea()
 {
-	if (_run)
-		_run = false;
-
-
+	Lock();
+	if (_mainRun)
+		_mainRun = false;
 	for (size_t i = 0; i < _clients.size(); i++)
 	{
 		_clients[i]->Close();
 		_clients[i] = 0;
 	}
 	_clients.clear();
-}
 
-void Area::EnterArea(Client * client)
-{
-	client->_account->_selectedPlayer->_currentArea = this;
-	Player * p = client->_account->_selectedPlayer;
-	
-	if (p->_position->_X == 0 && p->_position->_Y == 0 && p->_position->_Z == 0)
-		p->_position = _startPosition;
-	p->_position->_areaId = _startPosition->_areaId;
-	
-	_toAdd.push(client);
-
-}
-
-
-void Area::ExitArea(Client * client)
-{
-	for (size_t i = 0; i < _clients.size(); i++)
+	for (size_t i = 0; i < _drop.size(); i++)
 	{
-		if (_clients[i]->IsVisibleClient(client))
-			_clients[i]->RemoveVisibleClient(client);
+		if (_drop[i])
+		{
+			delete _drop[i];
+			_drop[i] = nullptr;
+		}
 	}
 
-	for (size_t i = 0; i < _clients.size(); i++)
+	//mobs..etc
+	Unlock();
+}
+
+const bool  Area::EnterArea(Client * client)
+{
+	if (!client)
+		return false;
+	Player * p = nullptr;
+	if (!(p = client->GetSelectedPlayer()))
+		return false;
+
+
+	p->_position->_continentId = _continentId;
+	p->_position->_worldMapGuardId = _worldMapGuardId;
+	p->_position->_worldMapWorldId = _worldMapWorldId;
+	p->_position->_worldMapSectionId = _startWorldMapSectionId;
+	p->_currentArea = this;
+	std::lock_guard<std::mutex> lock(_lockMutex);
+	InitPlayerWorld(client);
+	_clients.push_back(client);
+	return true;
+}
+const bool Area::EnterArea(Client * client, int sectionId)
+{
+	if (!client)
+		return false;
+	Player * p = nullptr;
+	if (!(p = client->GetSelectedPlayer()))
+		return false;
+
+	bool hasSection = false;
+	for (size_t i = 0; i < _sections.size(); i++)
+		if (_sections[i] && _sections[i]->worldMapSectionId == sectionId)
+			hasSection = true;
+
+	if (!hasSection)
+		return false;
+	p->_position->_continentId = _continentId;
+	p->_position->_worldMapGuardId = _worldMapGuardId;
+	p->_position->_worldMapWorldId = _worldMapWorldId;
+	p->_currentArea = this;
+	p->_position->_worldMapSectionId = sectionId;
+	InitPlayerWorld(client);
+	std::lock_guard<std::mutex> lock(_lockMutex);
+	_clients.push_back(client);
+	return true;
+}
+
+void Area::ClearDrop()
+{
+	std::lock_guard<std::mutex> locker(_lockMutex);
+
+	for (size_t i = 0; i < _drop.size(); i++)
 	{
-		if (_clients[i] == client)
+		if (_drop[i])
 		{
-			_clients[i] = 0;
+			for (size_t j = 0; j < _clients.size(); j++)
+					BroadcastSystem::BroadcastDespawnDrop(_clients[j], _drop[i]->_entityId);
+
+			delete _drop[i];
+			_drop[i] = nullptr;
+		}
+	}
+
+	_drop.clear();
+}
+
+void Area::RemoveDrop(int dropid)
+{
+	_lootLockMutex.lock();
+
+	for (size_t i = 0; i < _drop.size(); i++)
+	{
+		if (_drop[i] && _drop[i]->_entityId == dropid)
+		{
+			delete _drop[i];
+			_drop[i] = nullptr;
+
+			_drop.erase(_drop.begin() + i);
 			break;
 		}
 	}
+	_lootLockMutex.unlock();
+
+
+	for (size_t j = 0; j < _clients.size(); j++)
+		BroadcastSystem::BroadcastDespawnDrop(_clients[j], dropid);
+}
+
+void Area::ExitArea(Client * client)
+{
+	if (!client)
+		return;
+	client->Disappear();
+	Player *p = nullptr;
+	if (!(p = client->GetSelectedPlayer()))
+		return;
+
+	std::lock_guard<std::mutex> lock(_lockMutex);
+	for (size_t i = 0; i < _clients.size(); i++)
+		if (_clients[i] == client)
+		{
+			_clients[i] = 0;
+			_clients.erase(_clients.begin() + i);
+			break;
+		}
+
+	p->_currentArea = nullptr;
+}
+
+void Area::AddDrop(Drop * drop)
+{
+	_toAddDrop.push(drop);
+}
+
+void Area::RemoveDrop(Drop * drop)
+{
+}
+
+void Area::InitPlayerWorld(Client * caller)
+{
+	Player * me = nullptr; Player * you = nullptr;
+	if ((me = caller->GetSelectedPlayer()) != 0)
+	{
+		for (size_t i = 0; i < _clients.size(); i++)
+		{
+			if (_clients[i] && _clients[i] != caller)
+			{
+				you = _clients[i]->GetSelectedPlayer();
+				if (!you)
+					continue;
+
+				if (me->_position->_worldMapSectionId != you->_position->_worldMapSectionId)
+					continue;
+
+				double distance = me->_position->FastDistanceTo(you->_position);
+				if (distance <= 10000)
+				{
+					caller->AddVisibleClient(_clients[i]);
+					_clients[i]->AddVisibleClient(caller);
+				}
+			}
+		}
+		Stream* data = new Stream();
+		Drop * dp = nullptr; short ownersPos = 0;
+		for (size_t i = 0; i < _drop.size(); i++)
+		{
+			dp = _drop[i];
+			if (!dp)
+				continue;
+
+			data->Clear();
+			data->WriteInt16(0);
+			data->WriteInt16(S_SPAWN_DROPITEM);
+			data->WriteInt16(0);
+			ownersPos = data->NextPos();
+			data->WriteInt64(dp->_entityId);
+			data->WriteFloat(dp->X);
+			data->WriteFloat(dp->Y);
+			data->WriteFloat(dp->Z);
+			data->WriteInt32(dp->_itemId);
+			data->WriteInt32(dp->_stackCount);
+			data->WriteInt32(dp->_unk1);
+			data->WriteInt32(dp->_unk2);
+			data->WriteInt16(dp->_unk3);
+			data->WriteInt32(dp->_unk4);
+			data->WriteInt32(dp->_unk5);
+			data->WritePos(ownersPos);
+			for (size_t j = 0; j < dp->_ownersEntityIds.size(); j++)
+				data->WriteInt32(dp->_ownersEntityIds[j]);
+			if (dp->_ownersEntityIds.size() == 0)
+				data->WriteInt16(0);
+
+			data->WritePos(0);
+			BroadcastSystem::Broadcast(caller, data, ME, 0);
+		}
+	}
+}
+
+void Area::ChangeSection(Client * client, int sectionId)
+{
+	Player * p = nullptr;
+	if (!(p = client->GetSelectedPlayer()) || !p->_currentVisitedSection || p->_currentVisitedSection->worldMapSectionId != sectionId)
+		return;
+	//todo
 
 }
 
-void Area::SpawnMe(Client * client, WorldPosition * position)
+const bool AreaSection::operator==(AreaSection& a)
 {
-	bool hasArea = false;
-	for (size_t i = 0; i < _clients.size(); i++)
+	return (continentId == a.continentId) && (worldMapSectionId == a.worldMapSectionId);
+}
+
+const bool AreaSection::operator!=(AreaSection & a)
+{
+	return (a.continentId != continentId) && (a.worldMapSectionId != worldMapSectionId);
+}
+
+AreaSection::AreaSection()
+{
+	memset(this, 0, sizeof AreaSection);
+}
+
+AreaSection::~AreaSection()
+{
+	for (size_t i = 0; i < _fences.size(); i++)
 	{
-		if (_clients[i] == client)
+		if (_fences[i])
 		{
-			while (!client->LockPlayer())
-				continue;
-
-			ExitArea(client);
-			EnterArea(client);
-
-			position->CopyTo(client->_account->_selectedPlayer->_position);
-
-			client->_account->_selectedPlayer->_position->_areaId = _startPosition->_areaId;
-			
-			client->UnlockPlayer();
-
+			delete _fences[i];
+			_fences[i] = 0;
 		}
 	}
+	_fences.clear();
 }
 
 

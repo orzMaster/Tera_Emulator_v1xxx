@@ -1,6 +1,6 @@
 #include "WorldPosition.h"
 #include "Climb.h"
-#include "Vector3.h"
+#include "Vector3.hpp"
 
 bool WorldPosition::IsNull()
 {
@@ -9,7 +9,7 @@ bool WorldPosition::IsNull()
 
 void WorldPosition::operator=(WorldPosition * t)
 {
-	this->_areaId = t->_areaId;
+	this->_continentId = t->_continentId;
 	this->_X = t->_X;
 	this->_Y = t->_Y;
 	this->_Z = t->_Z;
@@ -19,17 +19,19 @@ WorldPosition::WorldPosition()
 {
 	_X = _Y = _Z = 0.0f;
 	_heading = 0;
-	_areaId = 0;
-	
+	_continentId = 0;
 }
 
-WorldPosition::WorldPosition(float x, float y, float z, short heading, short areaId)
+WorldPosition::WorldPosition(float x, float y, float z, short heading, int continentId, int worldMapSectionId, int worldMapGuardId, int worldMapWorldId)
 {
 	_X = x;
 	_Y = y;
 	_Z = z;
 	_heading = heading;
-	_areaId = areaId;
+	_continentId = continentId;
+	_worldMapGuardId = worldMapGuardId;
+	_worldMapSectionId = worldMapSectionId;
+	_worldMapWorldId = worldMapWorldId;
 }
 
 double WorldPosition::DistanceTo(float x, float y)
@@ -92,7 +94,7 @@ WorldPosition* WorldPosition::Clone()
 	out->_X = _X;
 	out->_Y = _Y;
 	out->_Z = _Z;
-	out->_areaId = _areaId;
+	out->_continentId = _continentId;
 	out->_heading = _heading;
 
 	return out;

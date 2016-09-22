@@ -18,7 +18,7 @@ public:
 
 private:
 	static std::vector<Entity*> _entities;
-	static unsigned long long _last;
+	static unsigned long long _lastId;
 	static std::mutex _generateMutex;
 	static std::mutex _getEntityMutex;
 };

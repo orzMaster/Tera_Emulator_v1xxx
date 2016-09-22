@@ -6,7 +6,7 @@ RGuardPkPolicy::RGuardPkPolicy() : SendPacket(C_GUARD_PK_POLICY)
 {
 }
 
-void RGuardPkPolicy::Process(OpCode opCode, Stream * data, Client * caller)
+void RGuardPkPolicy::Process(OpCode opCode, Stream * data, Client * caller)const
 {
 	data->Clear();
 	data->WriteInt16(7);

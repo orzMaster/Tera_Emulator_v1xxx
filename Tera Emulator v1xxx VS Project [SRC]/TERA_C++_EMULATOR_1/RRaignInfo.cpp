@@ -5,7 +5,7 @@ RRaignInfo::RRaignInfo() : SendPacket(C_REIGN_INFO)
 {
 }
 
-void RRaignInfo::Process(OpCode opCode, Stream * stream, Client * caller)
+void RRaignInfo::Process(OpCode opCode, Stream * stream, Client * caller)const
 {
 	int unk1 = stream->ReadInt32();
 

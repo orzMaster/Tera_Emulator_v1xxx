@@ -9,6 +9,17 @@ Stream::Stream()
 	_flag1 = false;
 }
 
+Stream::Stream(std::istream * str)
+{
+	str->seekg(0, std::istream::end);
+	_size = str->tellg();
+	str->seekg(0, std::istream::beg);
+
+	_raw = new byte[_size];
+	str->read((char*)_raw, _size);
+	_pos = 0;
+}
+
 Stream::Stream(unsigned int size)
 {
 	_size = size;
@@ -70,7 +81,7 @@ Stream::~Stream()
 
 void Stream::Resize(unsigned int size)
 {
-	if (_size + size > (unsigned int)STREAM_MAX_SIZE)
+	if (size <= 0 || _size + size > (unsigned int)STREAM_MAX_SIZE)
 		return;
 
 
@@ -133,8 +144,9 @@ void Stream::Read(byte * out_buffer, unsigned int size)
 
 unsigned short Stream::NextPos()
 {
+	short tempPos = _pos;
 	WriteInt16(0);
-	return _pos;
+	return tempPos;
 }
 
 short Stream::ReadInt16()
@@ -152,6 +164,7 @@ int Stream::ReadInt32()
 	if (_size - 4 < _pos)
 		return -999999;
 
+	//int out = ((_raw[_pos + 3] << 24) | (_raw[_pos + 2] << 16) | (_raw[_pos + 1] << 8) | _raw[_pos]);
 	int out = ((_raw[_pos + 3] << 24) | (_raw[_pos + 2] << 16) | (_raw[_pos + 1] << 8) | _raw[_pos]);
 	_pos += 4;
 
@@ -166,6 +179,19 @@ float Stream::ReadFloat()
 	float out = *(float*)(&_raw[_pos]);
 	_pos += 4;
 	return out;
+}
+
+long long Stream::ReadInt64()
+{
+	if (_size < _pos + 8)
+		return 0xffffffffffffffff;
+
+	long long l = 0xffffffffffffffff;
+	for (int i = _pos; i < 8; ++i) {
+		l = l | ((unsigned long long)_raw[i] << (8 * i));
+	}
+	_pos += 8;
+	return l;
 }
 
 byte Stream::ReadByte()
@@ -289,19 +315,19 @@ void Stream::WritePos(short s, short offset)
 }
 
 
-std::string Stream::ReadReceivedString() {
+std::string Stream::ReadUTF16StringBigEdianToASCII() {
 
 	std::string out;
-
-
+	int count = 0;
 	for (size_t i = _pos; i < _size; i += 2)
 	{
 		if (_raw[i] == 0x00 && _raw[i + 1] == 0x00)
 			break;
-
+		count += 2;
 		out.push_back(_raw[i]);
 	}
-	_pos += (out.size() * 2) + 2;
+	count += 2;
+	_pos += count;
 
 	return out;
 }
@@ -330,7 +356,7 @@ std::string Stream::ReadASCIIString()
 	return out;
 }
 
-std::string Stream::ReadString()
+std::string Stream::ReadUTF16StringLittleEdianToASCII()
 {
 	std::string out;
 	for (size_t i = _pos; i < _size; i += 2)

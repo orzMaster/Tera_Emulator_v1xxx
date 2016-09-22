@@ -13,9 +13,9 @@ enum PlayerClass : short //TODO: add values
 	PRIEST = 6,
 	MYSTIC = 7,
 	REAPER = 8,
-	GUNNER = 9,
-	BRAWLER = 10,
-	NINJA = 11
+	ENGINEER = 9, //gunner
+	FIGHTER = 10, //brawler
+	ASSASSIN = 11 //ninja
 };
 
 enum PlayerGender :short
@@ -36,13 +36,13 @@ enum PlayerRace : short //TODO: add values
 
 };
 
-enum NpcSize : int
+enum MobSize : int
 {
-	Small = 1,
-	Medium = 2,
-	Large = 3,
-	All = 4,
-	TPlayer = 5
+	Small		= 1,
+	Medium			= 2,
+	Large			= 3,
+	All				= 4,
+	TPlayer		= 5
 };
 
 enum PlayerMoveType : int

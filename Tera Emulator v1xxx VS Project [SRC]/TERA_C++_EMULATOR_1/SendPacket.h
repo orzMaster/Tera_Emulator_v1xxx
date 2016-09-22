@@ -30,7 +30,7 @@ class SendPacket
 	friend class BroadcastSystem;
 public:
 	SendPacket(OpCode toRecv, bool ordered = true);
-	virtual void Process(OpCode opCode, Stream * data, Client* caller) = 0;
+	virtual void Process(OpCode opCode, Stream * data, Client* caller) const = 0;
 	OpCode _toRecv;
 	bool _orderedPacket;
 };

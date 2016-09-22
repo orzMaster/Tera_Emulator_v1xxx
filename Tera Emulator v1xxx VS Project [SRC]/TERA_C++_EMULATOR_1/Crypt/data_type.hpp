@@ -3,12 +3,29 @@
 
 #include <cstdint>
 
-#define ulong	uint64_t
-#define uint	uint32_t
-#define ushort	uint16_t
-#define uchar	uint8_t
-#define byte	uint8_t
-#define Wchar	uint16_t
+#ifndef ulong
+#define ulong	unsigned long long
+#endif
+
+#ifndef uint
+#define uint	unsigned int
+#endif
+
+#ifndef ushort
+#define ushort	unsigned short
+#endif
+
+#ifndef uchar
+#define uchar	unsigned char
+#endif
+
+#ifndef byte
+#define byte	unsigned char
+#endif
+
+#ifndef Wchar
+#define Wchar	unsigned short
+#endif
 
 #ifdef WIN32
 	#define socklen_t int

@@ -4,14 +4,14 @@
 unsigned long long EntityService::GenerateId()
 {
 	_generateMutex.lock();
-	_last++;
+	_lastId++;
 	_generateMutex.unlock();
-	return _last;
+	return _lastId;
 }
 
 void EntityService::Initialize(unsigned long long start)
 {
-	_last = start;
+	_lastId = start;
 }
 
 Entity * EntityService::GetEntity(unsigned long long id)
@@ -50,7 +50,7 @@ void EntityService::Remove(Entity * e)
 	_getEntityMutex.unlock();
 }
 
-unsigned long long EntityService::_last = 0;
+unsigned long long EntityService::_lastId = 0;
 std::mutex   EntityService::_generateMutex;
 std::mutex   EntityService::_getEntityMutex;
 std::vector<Entity*> EntityService::_entities;

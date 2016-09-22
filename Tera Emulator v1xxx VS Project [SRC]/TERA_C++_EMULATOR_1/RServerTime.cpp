@@ -5,7 +5,7 @@ RServerTime::RServerTime() : SendPacket(C_SERVER_TIME)
 {
 }
 
-void RServerTime::Process(OpCode opCode, Stream * data, Client * caller)
+void RServerTime::Process(OpCode opCode, Stream * data, Client * caller)const
 {
 	data->WriteInt16(14);
 	data->WriteInt16(S_SERVER_TIME);

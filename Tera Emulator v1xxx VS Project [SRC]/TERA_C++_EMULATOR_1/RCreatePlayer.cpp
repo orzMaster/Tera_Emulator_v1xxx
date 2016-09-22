@@ -1,21 +1,23 @@
 #include "RCreatePlayer.h"
+#include "Inventory.h"
+#include "ItemEnum.h"
+#include "StatsService.h"
+#include "SkillService.h"
 
 RCreatePlayer::RCreatePlayer() : SendPacket(C_CREATE_USER)
 {
 }
 
-void RCreatePlayer::Process(OpCode opCode, Stream * stream, Client * caller)
+void RCreatePlayer::Process(OpCode opCode, Stream * stream, Client * caller)const
 {
-
-	bool result = caller->_account->_playerCount >= MAX_PLAYERS_PER_ACCOUNT;
-
-	if (!result)
+	Account * a = nullptr;
+	if ((a = caller->GetAccount()) && a->GetPlayerCount() < MAX_PLAYERS_PER_ACCOUNT)
 	{
 		short nameOffset = stream->ReadInt16();
 		short details1Offset = stream->ReadInt16();
-		short details1Length = stream->ReadInt16();
+		stream->ReadInt16();
 		short details2Offset = stream->ReadInt16();
-		short details2Length = stream->ReadInt16();
+		stream->ReadInt16();
 
 		short gender = stream->ReadInt32();
 		short race = stream->ReadInt32();
@@ -25,60 +27,63 @@ void RCreatePlayer::Process(OpCode opCode, Stream * stream, Client * caller)
 		byte * data = new byte[8];
 		stream->Read(data, 8);
 
-		stream->_pos = nameOffset - 4;
-		std::string name = stream->ReadReceivedString();
+		stream->_pos = nameOffset;
+		std::string name = stream->ReadUTF16StringBigEdianToASCII();
 
 		byte* details1 = new byte[32];
-		stream->_pos = details1Offset - 4;
-		stream->Read(details1, details1Length);
+		stream->_pos = details1Offset;
+		stream->Read(details1, 32);
 
 		byte* details2 = new byte[64];
-		memset((void*)details2, 0, 64);
-		stream->_pos = details2Offset - 4;
-		stream->Read(details2, details2Length);
-
-
-		Player::PlayerInfo * inf = new Player::PlayerInfo;
-		Player::PlayerSkinWareHouse * skinW = new Player::PlayerSkinWareHouse;
-		Player::PlayerWarehouse * pW = InventoryService::GetStartWarehouse((PlayerClass)pClass);
+		stream->_pos = details2Offset;
+		stream->Read(details2, 64);
 
 		Player * newPlayer = new Player();
 		newPlayer->_newPlayer = true;
 		newPlayer->_name = name;
-		newPlayer->_level = 1; //todo add leveling system-> start_level
+		newPlayer->_stats._level = 1;
 		newPlayer->_exp = 1;
 		newPlayer->_restedExp = 0;
 		newPlayer->_maxExp = LevelingService::GetLevelExperience(1);
 		newPlayer->_lastOnlineUTC = ServerTimer::GetCurrentUTC();
+		newPlayer->_creationTimeUTC = ServerTimer::GetCurrentUTC();
 		newPlayer->_banTimeUTC = 0;
-
 
 		newPlayer->_details1 = details1;
 		newPlayer->_details2 = details2;
 		newPlayer->_data = data;
 
-		newPlayer->_playerInfo = inf;
-		newPlayer->_playerWarehouse = pW;
-		newPlayer->_playerSkinWarehouse = skinW;
+		newPlayer->_playerInfo = new Player::PlayerInfo;
+		newPlayer->_playerInfo->pClass = (PlayerClass)pClass;
+		newPlayer->_playerInfo->pGender = (PlayerGender)gender;
+		newPlayer->_playerInfo->pRace = (PlayerRace)race;
+
+		newPlayer->_model = 10000;
+		newPlayer->_model += (newPlayer->_playerInfo->pRace * 2 + 1 + newPlayer->_playerInfo->pGender) * 100;
+		newPlayer->_model += newPlayer->_playerInfo->pClass + 1;
+
+		a->AddPlayer(newPlayer);
+
+		Inventory::GetStarterInventory(newPlayer);
+
 		WorldSystem::NewPlayerPosition(newPlayer);
 
+		StatsService::GetPlayerStartStats(newPlayer);
 
-		inf->pClass = (PlayerClass)pClass;
-		inf->pGender = (PlayerGender)gender;
-		inf->pRace = (PlayerRace)race;
+		SkillService::GetStarterSkillList(newPlayer);
 
-
-		PlayerService::BuildPlayerStats(newPlayer);
-
-		ZeroMemory(skinW, sizeof Player::PlayerSkinWareHouse);
-		caller->_account->AddPlayer(newPlayer);
+		stream->Clear();
+		stream->WriteInt16(5);
+		stream->WriteInt16(S_CREATE_USER);
+		stream->WriteByte(1);
+		caller->Send(stream);
+		stream->Clear();
+		return;
 	}
-
 	stream->Clear();
 	stream->WriteInt16(5);
 	stream->WriteInt16(S_CREATE_USER);
-	stream->WriteByte(result == true ? 0 : 1);
-	
+	stream->WriteByte(0);
 	caller->Send(stream);
 	stream->Clear();
 }

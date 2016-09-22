@@ -8,25 +8,14 @@
 
 #include "socket.hpp"
 
+class Stream; enum OpCode;
 class TeraPacket
 {
 public:
 	TeraPacket();
 	~TeraPacket();
-
-	const bool GetPacket(SOCKET sock, Crypt::Session * session);
-
-	void Resize(unsigned short size);
-	void Reset();
-
-	byte _opCode[2];
-	byte* _raw;
-	unsigned short _size;
-	unsigned short _pos;
-
-	const bool IsValidPacket();
+	Stream* GetPacket(SOCKET sock, Crypt::Session * session , OpCode& outOpcode);
 	std::mutex _recvMutex;
-
 };
 
 #endif

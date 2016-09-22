@@ -8,8 +8,12 @@ RHardwareInfo::RHardwareInfo() : SendPacket(C_HARDWARE_INFO)
 
 }
 
-void RHardwareInfo::Process(OpCode opCode, Stream * data, Client * caller)
+void RHardwareInfo::Process(OpCode opCode, Stream * data, Client * caller) const
 {
-	data->_pos = 55;
-	caller->_account->_hardwareInfo = data->ReadString();
+	Account* a = caller->GetAccount();
+	if (a)
+	{
+		data->_pos = 55;
+		a->_hardwareInfo = data->ReadUTF16StringLittleEdianToASCII();
+	}
 }

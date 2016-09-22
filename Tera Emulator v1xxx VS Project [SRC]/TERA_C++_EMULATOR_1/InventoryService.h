@@ -11,13 +11,11 @@ class InventoryService
 public:
 	static const bool LoadItems(const char* file = "data//items.bin");
 
-	static Player::PlayerWarehouse *GetStartWarehouse(PlayerClass pClass);
-
-	static void SendInventory(Client* client);
+	
 	static void ResolveInventory(std::vector<int> & _ids, std::vector<IItem*> & out_items);
 	static IItem * ResolveItem(int id);
 	static void Release();
-
+	
 	static std::vector<IItem*> _items;
 };
 			

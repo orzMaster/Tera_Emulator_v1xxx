@@ -69,9 +69,6 @@
     <Filter Include="Server\Resolutions\World">
       <UniqueIdentifier>{8962243b-3566-45a6-a33d-9a73347377bf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Server\Resolutions\Dungeon">
-      <UniqueIdentifier>{5cb53fbb-5775-4d58-abc8-cb6d227737d2}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Server\Resolutions\Event">
       <UniqueIdentifier>{0f8ca8ad-fdc1-4021-adc0-33781a1a44a2}</UniqueIdentifier>
     </Filter>
@@ -90,17 +87,38 @@
     <Filter Include="Server\Resolutions\Skill">
       <UniqueIdentifier>{2902063d-7f2b-454f-9e7b-1913f8c361a3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Server\Systems\SkillSystem">
-      <UniqueIdentifier>{d1daee91-e7e1-43d2-9708-f9cdb25d0edf}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Server\Systems\BroadcastSystem">
       <UniqueIdentifier>{50f5b3fa-2805-439e-a61a-59ea11b274c8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resources">
-      <UniqueIdentifier>{4cd7590d-6def-4e83-b34e-d3d596a930f0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Server\Resolutions\Chat">
       <UniqueIdentifier>{3515429b-9e13-4e9e-a568-6170812aed0f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server\Systems\SkillSystem">
+      <UniqueIdentifier>{d1daee91-e7e1-43d2-9708-f9cdb25d0edf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server\Systems\SkillSystem\Data">
+      <UniqueIdentifier>{bb871d5c-e266-445c-a78a-043902f3af5b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server\Services\Inventory">
+      <UniqueIdentifier>{0c6ddfc5-f95c-4347-b9d3-361a7bb2237f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server\Systems\Resources">
+      <UniqueIdentifier>{4cd7590d-6def-4e83-b34e-d3d596a930f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server\Services\StatsService">
+      <UniqueIdentifier>{244ff59e-3d63-42fc-8562-bcab44362e47}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server\Services\StatsService\Stats">
+      <UniqueIdentifier>{c688f32c-902d-47b9-9693-c85e2cecd19a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server\Systems\CombatSystem">
+      <UniqueIdentifier>{17890d05-259b-4a73-a65e-11d1d21b5e75}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server\Resolutions\Dungeon">
+      <UniqueIdentifier>{5cb53fbb-5775-4d58-abc8-cb6d227737d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server\Systems\BroadcastSystem\Data">
+      <UniqueIdentifier>{479db900-f94e-4bcb-8ebb-1a5280dfb71d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -185,9 +203,6 @@
     <ClCompile Include="SCheckVersion.cpp">
       <Filter>Server\Resolutions\Init</Filter>
     </ClCompile>
-    <ClCompile Include="InventoryService.cpp">
-      <Filter>Server\Services</Filter>
-    </ClCompile>
     <ClCompile Include="SkillService.cpp">
       <Filter>Server\Services</Filter>
     </ClCompile>
@@ -197,20 +212,11 @@
     <ClCompile Include="IAbnormality.cpp">
       <Filter>Server\Abnormality</Filter>
     </ClCompile>
-    <ClCompile Include="Effect.cpp">
-      <Filter>Server\Abnormality</Filter>
-    </ClCompile>
-    <ClCompile Include="AbnormalityManager.cpp">
-      <Filter>Server\Abnormality</Filter>
-    </ClCompile>
     <ClCompile Include="AbnormalitiesService.cpp">
       <Filter>Server\Services</Filter>
     </ClCompile>
     <ClCompile Include="EffectService.cpp">
       <Filter>Server\Services</Filter>
-    </ClCompile>
-    <ClCompile Include="IItem.cpp">
-      <Filter>Server\DataStructs</Filter>
     </ClCompile>
     <ClCompile Include="WorldSystem.cpp">
       <Filter>Server\Systems\WorldSystem</Filter>
@@ -248,9 +254,6 @@
     <ClCompile Include="Passivity.cpp">
       <Filter>Server\Passivity</Filter>
     </ClCompile>
-    <ClCompile Include="StatsService.cpp">
-      <Filter>Server\Services</Filter>
-    </ClCompile>
     <ClCompile Include="GeoService.cpp">
       <Filter>Server\Services</Filter>
     </ClCompile>
@@ -274,9 +277,6 @@
     </ClCompile>
     <ClCompile Include="UnionSystem.cpp">
       <Filter>Server\Systems</Filter>
-    </ClCompile>
-    <ClCompile Include="CreatureStats.cpp">
-      <Filter>Server\DataStructs</Filter>
     </ClCompile>
     <ClCompile Include="RCancelDeletePlayer.cpp">
       <Filter>Server\Resolutions\Lobby</Filter>
@@ -316,9 +316,6 @@
     </ClCompile>
     <ClCompile Include="RGetPlayerGuildLogo.cpp">
       <Filter>Server\Resolutions\Guild</Filter>
-    </ClCompile>
-    <ClCompile Include="RRequestUserItemLevelInfo.cpp">
-      <Filter>Server\Resolutions\Settings</Filter>
     </ClCompile>
     <ClCompile Include="RRequestInstoreProductList.cpp">
       <Filter>Server\Resolutions\Settings</Filter>
@@ -374,20 +371,116 @@
     <ClCompile Include="SendPacket.cpp">
       <Filter>Server\DataStructs</Filter>
     </ClCompile>
-    <ClCompile Include="BroadcastService.cpp">
-      <Filter>Server\Systems\BroadcastSystem</Filter>
-    </ClCompile>
     <ClCompile Include="RLoadTopoFin.cpp">
       <Filter>Server\Resolutions\Lobby</Filter>
     </ClCompile>
     <ClCompile Include="RExit.cpp">
       <Filter>Server\Resolutions</Filter>
     </ClCompile>
-    <ClCompile Include="ToSendPacket.cpp">
-      <Filter>Server\DataStructs</Filter>
-    </ClCompile>
     <ClCompile Include="RChat.cpp">
       <Filter>Server\Resolutions\Chat</Filter>
+    </ClCompile>
+    <ClCompile Include="RReturnToLobby.cpp">
+      <Filter>Server\Resolutions\Lobby</Filter>
+    </ClCompile>
+    <ClCompile Include="SkillStructs.cpp">
+      <Filter>Server\Systems\SkillSystem\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="ProjectileStructs.cpp">
+      <Filter>Server\Systems\SkillSystem\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="ProjectileSkill.cpp">
+      <Filter>Server\Systems\SkillSystem\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="AreaEffect.cpp">
+      <Filter>Server\Systems\SkillSystem\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="AbnormalityEffect.cpp">
+      <Filter>Server\Abnormality</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerStructs.cpp">
+      <Filter>Server\DataStructs</Filter>
+    </ClCompile>
+    <ClCompile Include="XMLDocumentParser.cpp">
+      <Filter>Framework</Filter>
+    </ClCompile>
+    <ClCompile Include="PassivityService.cpp">
+      <Filter>Server\Services</Filter>
+    </ClCompile>
+    <ClCompile Include="InventorySlot.cpp">
+      <Filter>Server\Services\Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="Inventory.cpp">
+      <Filter>Server\Services\Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="InventoryService.cpp">
+      <Filter>Server\Services\Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="IItem.cpp">
+      <Filter>Server\Services\Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="MessagingSystem.cpp">
+      <Filter>Server\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="PassivitySystem.cpp">
+      <Filter>Server\Systems</Filter>
+    </ClCompile>
+    <ClCompile Include="RShowItemToolTipEx.cpp">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="RDelItem.cpp">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="RMoveItemPos.cpp">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="MobStats.cpp">
+      <Filter>Server\Services\StatsService\Stats</Filter>
+    </ClCompile>
+    <ClCompile Include="CreatureStats.cpp">
+      <Filter>Server\Services\StatsService\Stats</Filter>
+    </ClCompile>
+    <ClCompile Include="StatsService.cpp">
+      <Filter>Server\Services\StatsService</Filter>
+    </ClCompile>
+    <ClCompile Include="CreatureBase.cpp">
+      <Filter>Server\Systems\WorldSystem\SystemData</Filter>
+    </ClCompile>
+    <ClCompile Include="CombatManager.cpp">
+      <Filter>Server\Systems\CombatSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="REquipItem.cpp">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="EffectEngine.cpp">
+      <Filter>Server\Systems\CombatSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="EquipmentSet.cpp">
+      <Filter>Server\Services\Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="RRequestUserItemLevelInfo.cpp">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="RInventoryAutoSort.cpp">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="RUnequipItem.cpp">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="RRequestContract.cpp">
+      <Filter>Server\Resolutions</Filter>
+    </ClCompile>
+    <ClCompile Include="BroadcastService.cpp">
+      <Filter>Server\Systems\BroadcastSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="ToSendPacket.cpp">
+      <Filter>Server\Systems\BroadcastSystem\Data</Filter>
+    </ClCompile>
+    <ClCompile Include="RTryLootDropItem.cpp">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="Drop.cpp">
+      <Filter>Server\Systems\WorldSystem\SystemData</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -424,9 +517,6 @@
     <ClInclude Include="mysql\MySqlDriver.h">
       <Filter>Framework\mysql</Filter>
     </ClInclude>
-    <ClInclude Include="PlayerEnums.h">
-      <Filter>Server\Enums</Filter>
-    </ClInclude>
     <ClInclude Include="ServerUtils.hpp">
       <Filter>Server\Utils</Filter>
     </ClInclude>
@@ -437,9 +527,6 @@
       <Filter>Server\Geo</Filter>
     </ClInclude>
     <ClInclude Include="Climb.h">
-      <Filter>Server\Geo</Filter>
-    </ClInclude>
-    <ClInclude Include="Vector3.h">
       <Filter>Server\Geo</Filter>
     </ClInclude>
     <ClInclude Include="RCanCreatePlayer.h">
@@ -469,9 +556,6 @@
     <ClInclude Include="SCheckVersion.h">
       <Filter>Server\Resolutions\Init</Filter>
     </ClInclude>
-    <ClInclude Include="InventoryService.h">
-      <Filter>Server\Services</Filter>
-    </ClInclude>
     <ClInclude Include="SkillService.h">
       <Filter>Server\Services</Filter>
     </ClInclude>
@@ -479,12 +563,6 @@
       <Filter>Framework</Filter>
     </ClInclude>
     <ClInclude Include="IAbnormality.h">
-      <Filter>Server\Abnormality</Filter>
-    </ClInclude>
-    <ClInclude Include="Effect.h">
-      <Filter>Server\Abnormality</Filter>
-    </ClInclude>
-    <ClInclude Include="AbnormalityManager.h">
       <Filter>Server\Abnormality</Filter>
     </ClInclude>
     <ClInclude Include="AbnormalitiesService.h">
@@ -495,9 +573,6 @@
     </ClInclude>
     <ClInclude Include="ItemEnum.h">
       <Filter>Server\Enums</Filter>
-    </ClInclude>
-    <ClInclude Include="IItem.h">
-      <Filter>Server\DataStructs</Filter>
     </ClInclude>
     <ClInclude Include="Crypt\data_type.hpp">
       <Filter>Crypt</Filter>
@@ -541,9 +616,6 @@
     <ClInclude Include="CreatureEnum.h">
       <Filter>Server\Enums</Filter>
     </ClInclude>
-    <ClInclude Include="StatsService.h">
-      <Filter>Server\Services</Filter>
-    </ClInclude>
     <ClInclude Include="GeoService.h">
       <Filter>Server\Services</Filter>
     </ClInclude>
@@ -567,9 +639,6 @@
     </ClInclude>
     <ClInclude Include="UnionSystem.h">
       <Filter>Server\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="CreatureStats.h">
-      <Filter>Server\DataStructs</Filter>
     </ClInclude>
     <ClInclude Include="OpCodesEnum.h">
       <Filter>Server\Connection</Filter>
@@ -612,9 +681,6 @@
     </ClInclude>
     <ClInclude Include="RGetPlayerGuildLogo.h">
       <Filter>Server\Resolutions\Guild</Filter>
-    </ClInclude>
-    <ClInclude Include="RRequestUserItemLevelInfo.h">
-      <Filter>Server\Resolutions\Settings</Filter>
     </ClInclude>
     <ClInclude Include="RRequestInstoreProductList.h">
       <Filter>Server\Resolutions\Settings</Filter>
@@ -670,9 +736,6 @@
     <ClInclude Include="RRequestGameStatPing.h">
       <Filter>Server\Resolutions\World</Filter>
     </ClInclude>
-    <ClInclude Include="BroadcastService.h">
-      <Filter>Server\Systems\BroadcastSystem</Filter>
-    </ClInclude>
     <ClInclude Include="RLoadTopoFin.h">
       <Filter>Server\Resolutions\Lobby</Filter>
     </ClInclude>
@@ -680,10 +743,7 @@
       <Filter>Server\Resolutions</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
-      <Filter>Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="ToSendPacket.h">
-      <Filter>Server\DataStructs</Filter>
+      <Filter>Server\Systems\Resources</Filter>
     </ClInclude>
     <ClInclude Include="ChatEnum.h">
       <Filter>Server\Enums</Filter>
@@ -691,15 +751,129 @@
     <ClInclude Include="RChat.h">
       <Filter>Server\Resolutions\Chat</Filter>
     </ClInclude>
+    <ClInclude Include="RReturnToLobby.h">
+      <Filter>Server\Resolutions\Lobby</Filter>
+    </ClInclude>
+    <ClInclude Include="SkillStructs.h">
+      <Filter>Server\Systems\SkillSystem\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="ProjectileStructs.h">
+      <Filter>Server\Systems\SkillSystem\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="ProjectileSkill.h">
+      <Filter>Server\Systems\SkillSystem\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="AreaEffect.h">
+      <Filter>Server\Systems\SkillSystem\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="AbnormalityEnums.h">
+      <Filter>Server\Enums</Filter>
+    </ClInclude>
+    <ClInclude Include="AbnormalityEffect.h">
+      <Filter>Server\Abnormality</Filter>
+    </ClInclude>
+    <ClInclude Include="SkillEnums.h">
+      <Filter>Server\Enums</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerStructs.h">
+      <Filter>Server\DataStructs</Filter>
+    </ClInclude>
+    <ClInclude Include="XMLDocumentParser.h">
+      <Filter>Framework</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerEnums.h">
+      <Filter>Server\Enums</Filter>
+    </ClInclude>
+    <ClInclude Include="PassivityService.h">
+      <Filter>Server\Services</Filter>
+    </ClInclude>
+    <ClInclude Include="InventorySlot.h">
+      <Filter>Server\Services\Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="Inventory.h">
+      <Filter>Server\Services\Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="InventoryService.h">
+      <Filter>Server\Services\Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="IItem.h">
+      <Filter>Server\Services\Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector3.hpp">
+      <Filter>Server\Geo</Filter>
+    </ClInclude>
+    <ClInclude Include="MessagingSystem.h">
+      <Filter>Server\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="PassivitySystem.h">
+      <Filter>Server\Systems</Filter>
+    </ClInclude>
+    <ClInclude Include="RShowItemToolTipEx.h">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="RMoveItemPos.h">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="RDelItem.h">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="MobStats.h">
+      <Filter>Server\Services\StatsService\Stats</Filter>
+    </ClInclude>
+    <ClInclude Include="CreatureStats.h">
+      <Filter>Server\Services\StatsService\Stats</Filter>
+    </ClInclude>
+    <ClInclude Include="StatsService.h">
+      <Filter>Server\Services\StatsService</Filter>
+    </ClInclude>
+    <ClInclude Include="CreatureBase.h">
+      <Filter>Server\Systems\WorldSystem\SystemData</Filter>
+    </ClInclude>
+    <ClInclude Include="CombatManager.h">
+      <Filter>Server\Systems\CombatSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="REquipItem.h">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="EffectEngine.h">
+      <Filter>Server\Systems\CombatSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="EquipmentSet.h">
+      <Filter>Server\Services\Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="RRequestUserItemLevelInfo.h">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="RInventoryAutoSort.h">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="RUnequipItem.h">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="RRequestContract.h">
+      <Filter>Server\Resolutions</Filter>
+    </ClInclude>
+    <ClInclude Include="BroadcastService.h">
+      <Filter>Server\Systems\BroadcastSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="ToSendPacket.h">
+      <Filter>Server\Systems\BroadcastSystem\Data</Filter>
+    </ClInclude>
+    <ClInclude Include="RTryLootDropItem.h">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="Drop.h">
+      <Filter>Server\Systems\WorldSystem\SystemData</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TERA_C++_EMULATOR_11.rc">
-      <Filter>Resources</Filter>
+      <Filter>Server\Systems\Resources</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\..\..\Desktop\icon.ico">
-      <Filter>Resources</Filter>
+      <Filter>Server\Systems\Resources</Filter>
     </Image>
   </ItemGroup>
 </Project>

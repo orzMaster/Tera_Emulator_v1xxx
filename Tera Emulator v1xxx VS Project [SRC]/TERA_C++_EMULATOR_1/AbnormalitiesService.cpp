@@ -1,44 +1,32 @@
 #include "AbnormalitiesService.h"
 #include "EffectService.h"
-#include "Effect.h"
 #include "IAbnormality.h"
 #include "Stream.h"
-
+#include "XMLDocumentParser.h"
 
 const bool AbnormalitiesService::LoadAbnormalities(const char * file)
 {
-	std::ifstream fs;
-	fs.open(file, std::ifstream::ate | std::ifstream::binary);
-	if (!fs.is_open())
+	std::string line = file;
+	line += "//info.txt";
+	std::ifstream infoFile = std::ifstream(line);
+	if (!infoFile.is_open())
 		return false;
+	int toReadCount = 0;
+	line.clear();
+	std::getline(infoFile, line);
+	sscanf(line.c_str(), "count =%d", &toReadCount);
+	infoFile.close();
 
-	int size = fs.tellg();
-	fs.seekg(0, std::ios::beg);
+	std::stringstream ss;
 
-	Stream * s = new Stream(size);
-	fs.read((char*)s->_raw, size);
-
-	fs.close();
-
-	int count = s->ReadInt32();
-
-	for (size_t i = 0; i < count; i++)
+	for (size_t i = 0; i < toReadCount; i++)
 	{
-		IAbnormality * newAb = new IAbnormality;
-		memset((void*)newAb, 0, sizeof IAbnormality);
-
-		newAb->_id = s->ReadInt32();
-		newAb->_name = s->ReadASCIIString().c_str();
-		newAb->_lifeTime = s->ReadFloat();
-		int efCount = s->ReadInt32();
-		for (size_t j = 0; j < efCount; j++)
-		{
-			newAb->_effects.push_back(EffectService::ResolveEffectId(s->ReadInt32()));
-		}
-		_abnormalities.push_back(newAb);
+		ss.clear(); ss.str("");
+		ss << file << "//Abnormality-" << i << ".xml";
+		std::cout << "Loading abnormalities from [Abnormality-" << i << ".xml]\n";
+		if (!XMLDocumentParser::ParseAbnormalityXMLDocument(ss.str().c_str(), _abnormalities))
+			continue;
 	}
-	//then abnormalities that apllyes effects on target ...like buffs and debufss, stances..etc
-	s->Clear();
 
 	return true;
 }
@@ -46,7 +34,6 @@ const bool AbnormalitiesService::LoadAbnormalities(const char * file)
 void AbnormalitiesService::Release()
 {
 	for (size_t i = 0; i < _abnormalities.size(); i++)
-
 	{
 		if (_abnormalities[i])
 		{
@@ -59,6 +46,16 @@ void AbnormalitiesService::Release()
 unsigned int AbnormalitiesService::GetCount()
 {
 	return _abnormalities.size();
+}
+
+IAbnormality * AbnormalitiesService::ResolveAbnormality(int id)
+{
+	for (size_t i = 0; i < _abnormalities.size(); i++)
+	{
+		if (_abnormalities[i] && _abnormalities[i]->_id == id)
+			return _abnormalities[i];
+	}
+	return nullptr;
 }
 
 std::vector <IAbnormality *> AbnormalitiesService::_abnormalities;

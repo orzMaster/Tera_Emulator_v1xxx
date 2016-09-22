@@ -6,15 +6,20 @@ RDungeonClearCountList::RDungeonClearCountList() :SendPacket(C_DUNGEON_CLEAR_COU
 {
 }
 
-void RDungeonClearCountList::Process(OpCode opCode, Stream * data, Client * caller)
+void RDungeonClearCountList::Process(OpCode opCode, Stream * data, Client * caller)const
 {
+	Player* p = caller->GetSelectedPlayer();
+	if (!p)
+		return;
+
 	data->ReadInt16();
-	std::string _playerName = data->ReadReceivedString();
+	std::string _playerName = data->ReadUTF16StringBigEdianToASCII();
 
 	data->Clear();
 	data->WriteInt16(8);
 	data->WriteInt16(S_DUNGEON_CLEAR_COUNT_LIST);
 	data->WriteInt32(0); //todo
+	data->WriteInt32(3659340); //0x4CD63700
 
-	BroadcastSystem::Broadcast(caller, data, ME, 0);
+	caller->Send(data);
 }

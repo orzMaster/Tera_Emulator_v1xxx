@@ -17,5 +17,5 @@ ChatSystem::~ChatSystem()
 
 void ChatSystem::SendChatSettings(Client * c)
 {
-	Stream s = Stream();
+	
 }

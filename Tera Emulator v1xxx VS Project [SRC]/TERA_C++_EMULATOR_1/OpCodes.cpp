@@ -1,23 +1,9 @@
-
+#include "OpCodes.hpp"
 #include "OpCodesEnum.h"
 #include "SendPacket.h"
 
-#include "OpCodes.hpp"
-
-OpCodes::OpCodes()
+void OpCodes::Release()
 {
-}
-
-
-OpCodes::~OpCodes()
-{
-
-}
-
-void OpCodes::Clear()
-{
-	_opCodesMutex.lock();
-
 	for (size_t i = 0; i < _opCodesList.size(); i++)
 	{
 		if (_opCodesList[i])
@@ -27,33 +13,24 @@ void OpCodes::Clear()
 		}
 	}
 	_opCodesList.clear();
-
-	_opCodesMutex.unlock();
 }
 
-
-SendPacket * OpCodes::Get(int opCode)
+const SendPacket const * OpCodes::Get(OpCode opCode)
 {
-	std::lock_guard<std::mutex> _lock(_opCodesMutex);
-	SendPacket* out_packet = 0;
-
 	for (size_t i = 0; i < _opCodesList.size(); i++)
 	{
 		if (_opCodesList[i])
 		{
-			if (opCode == (int)_opCodesList[i]->_toRecv)
+			if (opCode == _opCodesList[i]->_toRecv)
 			{
-				out_packet = _opCodesList[i];
-				break;
+				return _opCodesList[i];
 			}
 		}
 	}
-
-	
-	return out_packet;
+	return nullptr;
 }
 
-bool OpCodes::Add(SendPacket * sendPacket)
+bool OpCodes::Add(const SendPacket const  *sendPacket)
 {
 	if (!sendPacket)
 		return false;
@@ -61,10 +38,9 @@ bool OpCodes::Add(SendPacket * sendPacket)
 	return true;
 }
 
-unsigned int OpCodes::Count()
+const unsigned int OpCodes::Count()
 {
 	return _opCodesList.size();
 }
 
-std::vector<SendPacket*> OpCodes::_opCodesList;
-std::mutex OpCodes::_opCodesMutex;
+std::vector<const SendPacket const *> OpCodes::_opCodesList;

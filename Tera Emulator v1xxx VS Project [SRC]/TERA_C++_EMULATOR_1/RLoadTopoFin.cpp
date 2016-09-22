@@ -1,383 +1,228 @@
 #include "RLoadTopoFin.h"
+#include "CreatureStats.h"
+#include "WorldPosition.h"
+#include "Area.h"
+#include "MessagingSystem.h"
+#include "StatsService.h"
+#include "CreatureStats.h"
 
 RLoadTopoFin::RLoadTopoFin() : SendPacket(C_LOAD_TOPO_FIN)
 {
 }
 
-void RLoadTopoFin::Process(OpCode opCode, Stream * data, Client * caller)
+void RLoadTopoFin::Process(OpCode opCode, Stream * data, Client * caller)const
 {
+	Player * p = nullptr;
+	if (!(p = caller->GetSelectedPlayer()))
+		return;
 	data->Clear();
 
-	data->WriteInt16(0);
+	data->WriteInt16(10);
 	data->WriteInt16(S_VISITED_SECTION_LIST);
-
-	if (caller->_account->_selectedPlayer->_visitedSections.size() == 0)
-		data->WriteInt32(0x00000800);
-	else
-	{
-		data->WriteInt16(caller->_account->_selectedPlayer->_visitedSections.size());
-		data->WriteInt16(8);
-		data->WriteInt16(8);
-		data->WriteInt16(24);
-
-		for (size_t i = 0; i < caller->_account->_selectedPlayer->_visitedSections.size(); i++)
-		{
-			data->WriteInt32(caller->_account->_selectedPlayer->_visitedSections[i].continentId);
-			data->WriteInt32(caller->_account->_selectedPlayer->_visitedSections[i].areaId);
-			data->WriteInt32(caller->_account->_selectedPlayer->_visitedSections[i].sectionId);
-		}
-	}
-	data->WritePos(0);
+	data->WriteInt32(0);
+	data->WriteInt16(0);
 	caller->Send(data);
 	data->Clear();
 
-	data->WriteInt16(0);
+	data->WriteInt16(10);
 	data->WriteInt16(S_REQUEST_INVITE_GUILD_TAG);
-	data->WriteHexString("000000000000");
-	data->WritePos(0);
+	data->WriteInt32(0);
+	data->WriteInt16(0);
 	caller->Send(data);
 	data->Clear();
 
-	data->WriteInt16(0);
+	data->WriteInt16(10);
 	data->WriteInt16(S_USER_BLOCK_LIST);
-	data->WriteHexString("000000000000");
-	data->WritePos(0);
+	data->WriteInt32(0);
+	data->WriteInt16(0);
 	caller->Send(data);
 	data->Clear();
 
 	data->WriteInt16(0);
 	data->WriteInt16(S_FRIEND_GROUP_LIST);
-	data->WriteHexString("01000800080000001200020000004200650073007400200046007200690065006E006400730000000000");
+	data->WriteInt16(1);
+	data->WriteInt16(8);
+	data->WriteInt16(8);
+	data->WriteInt16(0);
+	data->WriteInt16(18);
+	data->WriteInt16(2);
+	data->WriteInt16(0);
+	data->WriteString("Prieteni1");
+
 	data->WritePos(0);
 	caller->Send(data);
 	data->Clear();
 
 	data->WriteInt16(0);
-	data->WriteInt16(S_FRIEND_LIST); 
+	data->WriteInt16(S_FRIEND_LIST);
 	data->WriteInt32(0);
-	short name_pos = data->_pos;
-	data->WriteInt16(0);
-	data->WriteInt16(0); //unk 5b00 91
+	short name_pos = data->NextPos();
 	data->WritePos(name_pos);
-	data->WriteString("Gazah Server");
-	data->WriteInt16(0);
+	data->WriteString("[Gazah Server]");
 	data->WritePos(0);
 	caller->Send(data);
 	data->Clear();
 
+	data->WriteInt16(10);
+	data->WriteInt16(S_UPDATE_FRIEND_INFO);
+	data->WriteInt32(0);
 	data->WriteInt16(0);
-	data->WriteInt16(S_LOAD_CLIENT_USER_SETTING);
-
-	if (caller->_account->_selectedPlayer->_userSettings)
-		data->Write(caller->_account->_selectedPlayer->_userSettings, 
-			caller->_account->_selectedPlayer->_settingSize);
-	else
-		data->WriteInt32(128);
-	data->WritePos(0);
 	caller->Send(data);
 	data->Clear();
 
-
-	data->WriteInt16(0);
-	data->WriteInt16(S_TRADE_BROKER_CALC_NOTIFY);
-	data->WriteHexString("00000000000000000000");
-	data->WritePos(0);
-	caller->Send(data);
-	data->Clear();
-
-	data->WriteInt16(0);
-	data->WriteInt16(S_PARCEL_READ_RECV_STATUS);
-	data->WriteHexString("00000000000000000000");
-	data->WritePos(0);
-	caller->Send(data);
-	data->Clear();
-
-	data->WriteInt16(0);
-	data->WriteInt16(S_ONGOING_LEVEL_EVENT_LIST);
-	data->WriteHexString("000000000000");
-	data->WritePos(0);
-	caller->Send(data);
-	data->Clear();
-
-	data->WriteInt16(0);
-	data->WriteInt16(S_ONGOING_HUNTING_EVENT_LIST);
-	data->WriteHexString("0100080008000000200000000000");
-	data->WritePos(0);
-	caller->Send(data);
-	data->Clear();
-
-	data->WriteInt16(0);
-	data->WriteInt16(S_EP_SYSTEM_DAILY_EVENT_EXP_ON_OFF);
-	data->WriteHexString("000000000000");
-	data->WritePos(0);
-	caller->Send(data);
-	data->Clear();
-
-
-	//------
-#pragma region S_SKILL_LIST
-	data->WriteInt16(0);
-	data->WriteInt16(S_SKILL_LIST);
-
-	data->WriteInt16(caller->_account->_selectedPlayer->_skillList.size());
-	data->WriteInt16(8);
-	data->WriteInt16(8);
-	Skill* sk = nullptr;
-	for (size_t i = 0; i < caller->_account->_selectedPlayer->_skillList.size(); i++)
-	{
-		sk = caller->_account->_selectedPlayer->_skillList[i];
-
-		data->WriteInt16(sk->unk1);
-		data->WriteInt32(sk->_skillId);
-		data->WriteInt16(sk->unk2);
-		data->WriteInt16(sk->unk3);
-	}
-
-	//data->WriteHexString("090008000800120074270000010012001C00844E000001001C002600A49C0000010026003000C4A28900010030003A00D4C9890001003A00440095A69903010044004E001127000000004E0058002C4C00000000580000002D4C00000000");
-
-	data->WritePos(0);
-	caller->Send(data);
-	data->Clear();
-#pragma endregion
+	caller->GetAccount()->SendAccountSettings(caller, false);
+	PlayerService::SendPlayerSettings(caller, false);
 	
+	data->WriteInt16(12);
+	data->WriteInt16(S_TRADE_BROKER_CALC_NOTIFY);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	caller->Send(data);
+	data->Clear();
 
+	data->WriteInt16(14);
+	data->WriteInt16(S_PARCEL_READ_RECV_STATUS);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
 	data->WriteInt16(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(10);
+	data->WriteInt16(S_ONGOING_LEVEL_EVENT_LIST);
+	data->WriteInt32(0);
+	data->WriteInt16(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(10);
+	data->WriteInt16(S_ONGOING_HUNTING_EVENT_LIST);
+	data->WriteInt32(0);
+	data->WriteInt16(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(10);
+	data->WriteInt16(S_EP_SYSTEM_DAILY_EVENT_EXP_ON_OFF);
+	data->WriteInt32(0);
+	data->WriteInt16(0);
+	caller->Send(data);
+	data->Clear();
+
+	if (!WorldSystem::EnterWorld(caller))
+		return;
+
+	data->WriteInt16(30);
 	data->WriteInt16(S_SPAWN_ME);
 
-	data->WriteInt32(caller->_entityId);
-	data->WriteInt32(caller->_account->_selectedPlayer->_entityId);
-	data->WriteFloat(caller->_account->_selectedPlayer->_position->_X);
-	data->WriteFloat(caller->_account->_selectedPlayer->_position->_Y);
-	data->WriteFloat(caller->_account->_selectedPlayer->_position->_Z);
-	data->WriteInt16(caller->_account->_selectedPlayer->_position->_heading);
-	data->WriteInt16(caller->_account->_selectedPlayer->_stats->_currentHp > 0 ? 1 : 0); 
-	data->WritePos(0);
-	caller->Send(data);
-	data->Clear();
+	data->WriteInt32(p->_entityId); //pid
+	data->WriteInt32(p->_subId); //pid
 
-#pragma region SEND_USER_STATS
-	Player * p = caller->_account->_selectedPlayer;
-	CreatureStats * stats = p->_stats;
-
-	Stream  s = Stream();
-	data->WriteInt16(0);
-	data->WriteInt16(S_PLAYER_STAT_UPDATE); //S_PLAYER_STAT_UPDATE 
-
-	data->WriteInt32(stats->_currentHp); //ACTUAL hp
-	data->WriteInt32(stats->_currentMp); //ACTUAL mp
-	data->WriteInt32(0);
-	data->WriteInt32(stats->_maxHp);
-	data->WriteInt32(stats->_maxMp);
-
-
-	data->WriteInt32(stats->_power); //base power	[character power + items base power]
-	data->WriteInt32(stats->_endurance); //base endurance [character endurance + items base endurance]				 
-	data->WriteInt32(stats->_impactFactor);
-	data->WriteInt32(stats->_balanceFactor);
-	data->WriteInt16(stats->_movementSpeed);
-	data->WriteInt16(50); //??							
-	data->WriteInt16(stats->_attackSpeed);
-	data->WriteFloat((float)stats->_critChance);
-
-	data->WriteFloat((float)stats->_critResist);
-	data->WriteFloat((float)stats->_critPower);
-
-	data->WriteInt32(stats->_attack); 	//base attack range1				
-	data->WriteInt32(stats->_attack); //base attack range2			
-
-	data->WriteInt32(stats->_defense); //defense 1					
-	data->WriteInt32(stats->_impact);	// impact		
-	data->WriteInt32(stats->_balance);	//balance		
-
-	data->WriteFloat(52.25); //RESISTANCES	weakening
-	data->WriteFloat(52.25); //RESISTANCES	
-	data->WriteFloat(52.25); //RESISTANCES	stun
-
-	data->WriteInt32(11);  //aditional power [from bonuses and effects]			
-	data->WriteInt32(8);   //aditional endurance [from bonuses and effects]
-	data->WriteInt32(12);  //aditional impactFactor
-	data->WriteInt32(13);  //aditional balanceFactor
-	data->WriteInt32(14);  //aditional movementSpeed
-	data->WriteInt32(15);  //aditional attackSpeed
-	data->WriteInt32(5775); //aditional attack range1??
-	data->WriteInt32(5776);	//aditional attack range2??
-	data->WriteInt32(5777); //aditioanl impact ??
-	data->WriteInt32(5777); //aditional defense range1
-	data->WriteInt32(5777); //aditional defense range2
-
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-
-	data->WriteInt16(0);	 //unk
-	data->WriteInt32(p->_level);	 //unk
-	data->WriteInt16(0);	 //unk
-
-	data->WriteByte(1); //alive / combat ?
-
-	data->WriteInt32(stats->_staminaHp);	 //aditioanl stamina hp
-	data->WriteInt32(stats->_staminaMp);	 //aditioanl stamina mp
-	data->WriteInt32(120);	 //stamina?
-	data->WriteInt32(220);	 //max stamina?
-
-	data->WriteInt32(1);	 //unk
-	data->WriteInt32(2);	 //unk
-	data->WriteInt32(3);	 //unk
-	data->WriteInt32(0);	 //inafmy
-	data->WriteInt32(177);	 //inventory item level
-	data->WriteInt32(90);	 //warehouse item level
-	data->WriteInt32(5);	 //unk
-	data->WriteInt32(6);	 //unk
-	data->WriteInt32(7);	 //unk
-	data->WriteInt32(8);	 //unk
-	data->WriteInt32(0);	 //unk
-
-	data->WriteFloat(102.04);
-	data->WriteFloat(0);	 //unk
-	data->WriteFloat(1.0);	 //unk
-	data->WritePos(0);
-
-	caller->Send(data);
-#pragma endregion
-
-
-	WorldSystem::EnterWorld(caller);
-
-
-
-	data->Clear();
-	data->WriteInt16(0);
-	data->WriteInt16(S_SPAWN_USER);
-
-	data->WriteInt64(0);
-
-
-	
-	short namePos = data->NextPos();
-	short guildNamePos = data->NextPos();
-	short Title = data->NextPos();
-
-	short details1Pos = data->NextPos();
-	data->WriteInt16(32);
-	
-	short gTitlePos = data->NextPos();
-	short gTitleIconPos = data->NextPos();
-
-	short details2Pos = data->NextPos();
-	data->WriteInt16(64);
-
-	data->WriteInt64(caller->_account->_selectedPlayer->_entityId +1);
-	data->WriteInt64(caller->_entityId +1);
-
-	data->WriteFloat(p->_position->_X + 10);
-	data->WriteFloat(p->_position->_Y +10);
-	data->WriteFloat(p->_position->_Z +10);
+	data->WriteFloat(p->_position->_X);
+	data->WriteFloat(p->_position->_Y);
+	data->WriteFloat(p->_position->_Z);
 	data->WriteInt16(p->_position->_heading);
+	data->WriteInt16(p->_stats.GetHP() > 0 ? 1 : 0);
+	data->WriteInt16(0);
+	caller->Send(data);
+	data->Clear();
 
-	data->WriteInt32(0); //relation ?? enemy / party member ...
-	data->WriteInt32(p->_model);
-	data->WriteInt16(0); //allawys 0?
-	data->WriteInt16(0); //unk2
-	data->WriteInt16(0); //unk3
-	data->WriteInt16(0); //unk4 allways 0?
-	data->WriteInt16(0); //unk5 0-3 ?
-
-	data->WriteByte(1);
-	data->WriteByte(1); //alive
-
-	data->Write(p->_data, 8);
-
-	data->WriteInt32(p->_playerWarehouse->weapon);
-	data->WriteInt32(p->_playerWarehouse->armor);
-	data->WriteInt32(p->_playerWarehouse->gloves);
-	data->WriteInt32(p->_playerWarehouse->boots);
-	data->WriteInt32(p->_playerWarehouse->innerWare);
-	data->WriteInt32(p->_playerWarehouse->skin1);
-	data->WriteInt32(p->_playerWarehouse->skin2);
-
-	data->WriteInt32(0); //unk 0-1-3 ??
-	data->WriteInt32(0); //mount...
-	data->WriteInt32(7); //7 ???
-	data->WriteInt32(0); // Title id
 	
-
-
-	data->WriteInt64(0);
-
-	data->WriteInt64(0);
-	data->WriteInt64(0);
-
-	data->WriteInt64(0);
-	data->WriteInt64(0);
-
-	data->WriteInt64(0);
-	data->WriteInt64(0);
-
-	data->WriteInt32(0);	  //unk s
+	data->WriteInt16(18);
+	data->WriteInt16(S_RESET_CHARM_STATUS);
+	data->WriteInt32(0);
+	data->WriteInt32(p->_entityId);
+	data->WriteInt32(p->_subId);
 	data->WriteInt16(0);
-	data->WriteByte(0); //allaways 0?
+	caller->Send(data);
+	data->Clear();
 
-	data->WriteByte(13);		  //enchants ??
-	data->WriteByte(0);		  //enchants ??
-	data->WriteByte(0);		  //enchants ??
-	data->WriteByte(0);		  //enchants ??
+	//MessagingSystem::SendSystemMessage(caller, "@888");
 
+	data->WriteInt16(23);
+	data->WriteInt16(S_ADD_CHARM_STATUS);
+	data->WriteInt32(p->_entityId);
+	data->WriteInt32(p->_subId);
+	data->WriteInt32(50300); //charm id?
+	data->WriteByte(1); // unk
+	data->WriteInt32(0x7FFFFFFF);
+	data->WriteInt16(0);
+	caller->Send(data);
+	data->Clear();
+
+	StatsService::SendPlayerStats(caller, false);
+
+	data->WriteInt16(22);
+	data->WriteInt16(S_PLAYER_CHANGE_ALL_PROF);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	data->WriteInt16(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(30);
+	data->WriteInt16(S_F2P_PremiumUser_Permission);
+	data->WriteInt16(1);		//unk
+	data->WriteInt16(20);		//unk
+	data->WriteInt32(5);		//unk
+	data->WriteFloat(1.0f);		//unk
+	data->WriteFloat(1.0f);		//unk
+	data->WriteInt32(20);		//unk
+	data->WriteInt32(1);		//unk
+	data->WriteInt16(0);		//unk
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(18);
+	data->WriteInt16(S_CREST_INFO);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	data->WriteInt16(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(0);
+	data->WriteInt16(S_LOAD_ACHIEVEMENT_LIST);
+	data->WriteInt32(0); 
+	data->WriteInt16(0);//count
+	data->WriteInt16(0);//next
+	data->WriteInt32(p->_entityId);
+	data->WriteInt32(p->_subId);
+	data->WriteInt32(1123); //unk
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	data->WriteInt16(0);
+	data->WritePos(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(10);
+	data->WriteInt16(S_LOAD_SKILL_SCRIPT_LIST);
+	data->WriteInt32(0);
+	data->WriteInt16(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(19);
+	data->WriteInt16(S_USER_STATUS);
+	data->WriteInt32(p->_entityId);
+	data->WriteInt32(p->_subId);
+	data->WriteInt32(p->_stats.status);
+	data->WriteInt16(0);
 	data->WriteByte(0);
-	data->WriteByte(0);
+	caller->Send(data);
+	data->Clear();
 
-	data->WriteInt16(p->_level);
-
-	data->WriteInt16(0);   //always 0?
-	data->WriteInt32(0);   //always 0?
+	data->WriteInt16(18);
+	data->WriteInt16(S_SKILL_PERIOD);
 	data->WriteInt32(0);
-	data->WriteByte(1); //unk boolean?
-
-	data->WriteInt32(0);	//skins ?
-	data->WriteInt32(0);	//skins ?
-	data->WriteInt32(0);	//skins ?
-	data->WriteInt32(0);	//skins ?
-	data->WriteInt32(0);	//skins ?
-	data->WriteInt32(0); //costumeDye # ?
-
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-
-	data->WriteByte(1); //boolean?
-
-	data->WriteInt32(1);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-
-	data->WriteByte(1); //boolean?
-	data->WriteInt32(0);
-
-	data->WriteFloat(1.0f); //allways 1.0f?
-
-	data->WritePos(namePos);
-	data->WriteString(p->_name);
-
-	data->WritePos(guildNamePos);
+	data->WriteInt32(p->_entityId);
+	data->WriteInt32(p->_subId);
 	data->WriteInt16(0);
-	data->WritePos(Title);
-	data->WriteInt16(0);
-
-	data->WritePos(details1Pos);
-	data->Write(p->_details1, 32);
-
-
-	data->WritePos(gTitlePos);
-	data->WriteInt16(0);
-	data->WritePos(gTitleIconPos);
-	data->WriteInt16(0);
-
-	data->WritePos(details2Pos);
-	data->Write(p->_details2, 64);
-
-	data->WritePos(0); //size
 	caller->Send(data);
 	data->Clear();
 }

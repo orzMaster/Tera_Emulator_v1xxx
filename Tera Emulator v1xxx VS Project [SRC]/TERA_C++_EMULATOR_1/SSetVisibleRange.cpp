@@ -6,7 +6,9 @@ SSetVisibleRange::SSetVisibleRange() : SendPacket(C_SET_VISIBLE_RANGE)
 {
 }
 
-void SSetVisibleRange::Process(OpCode opCode, Stream * data, Client * caller)
+void SSetVisibleRange::Process(OpCode opCode, Stream * data, Client * caller) const
 {
-	caller->_account->_visibleRange = data->ReadInt32();
+	Player * p = nullptr;
+	if ((p = caller->GetSelectedPlayer()))
+		p->_visibleRange = data->ReadInt32();
 }

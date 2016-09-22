@@ -2,25 +2,19 @@
 #define OPCODES_H
 
 #include <vector>
-#include <thread>
-#include <mutex>
 
-class SendPacket;
+class SendPacket; enum OpCode;
 class OpCodes
 {
 public:
-	OpCodes();
-	~OpCodes();
+	static void Release();
 
-	static void Clear();
+	static const  SendPacket const * Get(OpCode);
 
-	static SendPacket* Get(int);
-
-	static bool Add(SendPacket* sendPacket);
-	static unsigned int Count();
+	static bool Add(const SendPacket const *sendPacket);
+	static const unsigned int Count();
 private:
-	static std::vector<SendPacket*> _opCodesList;
-	static std::mutex _opCodesMutex;
+	static std::vector<const SendPacket const*> _opCodesList;
 
 };
 

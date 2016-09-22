@@ -4,15 +4,19 @@ RSaveUserSettings::RSaveUserSettings() : SendPacket(C_SAVE_CLIENT_USER_SETTING)
 {
 }
 
-void RSaveUserSettings::Process(OpCode opCode, Stream * stream, Client * owner)
+void RSaveUserSettings::Process(OpCode opCode, Stream * stream, Client * owner)const
 {
-	owner->_account->_selectedPlayer->_settingSize = stream->_size;
-	if (owner->_account->_selectedPlayer->_userSettings)
+	Player* p = nullptr;
+	if (!(p = owner->GetSelectedPlayer()))
+		return;
+
+	p->_settingSize = stream->_size;
+	if (p->_playerSettings)
 	{
-		delete owner->_account->_selectedPlayer->_userSettings;
-		owner->_account->_selectedPlayer->_userSettings = 0;
+		delete p->_playerSettings; p->_playerSettings = 0;
+		p->_playerSettings = 0;
 	}
 
-	owner->_account->_selectedPlayer->_userSettings = new byte[stream->_size];
-	stream->Read(owner->_account->_selectedPlayer->_userSettings, stream->_size);
+	p->_playerSettings = new byte[stream->_size];
+	stream->Read(p->_playerSettings, stream->_size);
 }

@@ -6,9 +6,11 @@ RCheckUsername::RCheckUsername() : SendPacket(C_CHECK_USERNAME)
 {
 }
 
-void RCheckUsername::Process(OpCode opCode, Stream * data, Client * caller)
+void RCheckUsername::Process(OpCode opCode, Stream * data, Client * caller)const
 {
-	std::string name = data->ReadReceivedString();
+	short nameOffset = data->ReadInt16();
+	
+	std::string name = data->ReadUTF16StringBigEdianToASCII();
 	byte  b = PlayerService::CheckPlayerName(name);
 
 	data->Clear();

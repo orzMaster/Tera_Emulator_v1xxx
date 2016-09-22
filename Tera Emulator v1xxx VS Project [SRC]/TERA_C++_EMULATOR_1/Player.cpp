@@ -1,40 +1,29 @@
 #include "Player.hpp"
 #include "ServerTimer.h"
+#include "Area.h"
+#include "Stream.h"
+#include "OpCodesEnum.h"
 
-Player::Player() : Entity(), _currentVisitedSection(AreaSection(0, 0, 0))
+Player::Player() : CreatureBase()
 {
-	_toDelete = false;
-	_playerSkinWarehouse = 0;
+	_toDelete = 0;
 	_playerInfo = 0;
-	_playerWarehouse = 0;
 	_exp = 0;
 	_restedExp = 0;
 	_data = 0;
 	_details1 = 0;
 	_details2 = 0;
-	_depositSlots = 0;
 	_name = "";
 	_lastOnlineUTC = 0;
 	_banTimeUTC = 0;
 	_creationTimeUTC = 0;
-	_newPlayer = false;
+	_newPlayer = 0;
 	_visibleRange = 2000;
-	_stats = 0;
-	_userSettings = 0;
+	_playerSettings = 0;
 }
 
 Player::~Player()
 {
-	if (_playerSkinWarehouse)
-	{
-		delete _playerSkinWarehouse;
-		_playerSkinWarehouse = 0;
-	}
-	if (_playerWarehouse)
-	{
-		delete _playerWarehouse;
-		_playerWarehouse = 0;
-	}
 	if (_playerInfo)
 	{
 		delete _playerInfo;
@@ -61,32 +50,23 @@ Player::~Player()
 		delete _position;
 		_position = 0;
 	}
-	if (_stats)
+	if (_playerSettings)
 	{
-		delete _stats;
-		_stats = 0;
+		delete[] _playerSettings;
+		_playerSettings = 0;
 	}
-	if (_userSettings)
+	if (_inventory)
 	{
-		delete[] _userSettings;
-		_userSettings = 0;
+		delete _inventory;
+		_inventory = 0;
 	}
-
+	if (_moveStream)
+	{
+		delete _moveStream;
+		_moveStream = 0;
+	}
+	
 }
 
-const bool Player::AreaSection::operator==(AreaSection& a)
-{
-	return (continentId == a.continentId) && (areaId == a.areaId) && (sectionId == a.sectionId);
-}
 
-const bool Player::AreaSection::operator!=(AreaSection & a)
-{
-	return (a.areaId != areaId) && (a.sectionId != sectionId);
-}
 
-Player::AreaSection::AreaSection(int a, int b, int c)
-{
-	continentId = a;
-	areaId = b;
-	sectionId = c;
-}

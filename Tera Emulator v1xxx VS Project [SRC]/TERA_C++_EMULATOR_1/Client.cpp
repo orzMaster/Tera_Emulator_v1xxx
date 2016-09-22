@@ -8,17 +8,20 @@
 #include "OpCodesEnum.h"
 #include "OpCodes.hpp"
 #include "SendPacket.h"
+#include "Inventory.h"
+#include "ItemEnum.h"
+#include "EffectEngine.h"
+
+//#define DUMP_TRAFFIC 0
 
 Client::Client(SOCKET socket, sockaddr_in sockData, Server * server) : Entity()
 {
-	std::cout << "Client connected!\n";
 	_socket = socket;
 	_sockData = sockData;
-	_playerLocked = false;
-	_run = false;
-	_opened = true;
+	_mainRun = _workRunnging = _mainRunnging = false;
 	_session = 0;
 	_connectionId = -1;
+	_effectEngine = new EffectEngine(server, this);
 
 	int val = 1;
 	setsockopt(_socket, SOL_SOCKET, SO_KEEPALIVE, (const char*)&val, sizeof val);
@@ -28,29 +31,32 @@ Client::Client(SOCKET socket, sockaddr_in sockData, Server * server) : Entity()
 }
 Client::~Client()
 {
+	LogoutClient();
+	if (_socket != INVALID_SOCKET && _socket != SOCKET_ERROR)
+	{
+		Close();
+	}
 	if (_session)
 	{
 		delete _session;
 		_session = 0;
 	}
-	_account = 0;
 }
 
 void Client::Close()
 {
-	_run = false;
-	_opened = false;
+	if (_mainRun)
+		_mainRun = false;
 	shutdown(_socket, SD_BOTH);
 	closesocket(_socket);
+	_socket == INVALID_SOCKET;
 }
-void Client::SetId(int id)
-{
-	_connectionId = id;
-}
-
 void Client::Run(Client * instance, Server* server)
 {
+	if (!instance->_effectEngine->Initialize())
+		instance->Close();
 
+	std::cout << "Client connected! ID[" << instance->_entityId << "]\n";
 	int read = 0; bool err = true;
 	srand(time((time_t)0));
 	char
@@ -94,81 +100,110 @@ void Client::Run(Client * instance, Server* server)
 
 	if (!err)
 	{
-		instance->_canRecvVariable = true;
-		instance->_run = true;
+		instance->_mainRun = true;
+		instance->_mainRunnging = true;
 		instance->_session = new Crypt::Session((uint8_t*)clientKey1, (uint8_t*)clientKey2, (uint8_t*)serverKey1, (uint8_t*)serverKey2);
+
+		instance->_workThread = std::thread(Action, instance, server);
+		instance->_workThread.detach();
+
 		Recevie(instance);
 	}
 
+	instance->_mainRun = false;
+	int times = 0;
+	while (instance->_workRunnging)
+	{
+		times++;
+		Sleep(1);
+	}
+	Sleep(1);
+	std::cout << "::Work thread closed! times[" << times << "]\n";
+	instance->_mainRunnging = false;
 
-	instance->_run = false;
-
-
-	PlayerService::SaveAccountData(instance->_account);
-	std::cout << "Client disconnected! EntityID[" << instance->_entityId << "] err?[" << err << "]\n";
-	
-	instance->_account->_loggedIn = false;
-	server->EndConnection(instance);
+	PlayerService::UpdateAccountData(instance->_account);
+	WorldSystem::ExitWorld(instance);
+	instance->LogoutClient();
+	instance->Close();
+	std::cout << ">Client disconnected! EntityID[" << instance->_entityId << "] err?[" << err << "]\n";
+	server->RemoveConnection(instance);
 }
 void Client::Recevie(Client * instance)
 {
 	TeraPacket * _packet = new TeraPacket();
-	Stream * processStream = new Stream();
-
-	while (instance->_run)
+	Stream * processStream = nullptr;
+	OpCode opCode;
+	while (instance->_mainRun)
 	{
-		if (!instance->_canRecvVariable)
-			instance->_canRecv.wait(std::unique_lock<std::mutex>(instance->_recvMutex));
-
-
-		if (!_packet->GetPacket(instance->_socket, instance->_session))
+		if ((processStream = _packet->GetPacket(instance->_socket, instance->_session, opCode)))
 		{
-			break;
+			processStream->_pos = 4;
+			instance->ProcessData(instance, processStream, opCode);
+
+			delete processStream;
+			processStream = nullptr;
 		}
-
-		instance->ProcessData(instance, _packet, processStream);
-		_packet->Reset();
+		else
+			break;
 	}
-
 
 	if (_packet)
 	{
 		delete _packet;
-		_packet = 0;
+		_packet = nullptr;
 	}
-
-	processStream->Clear();
-	delete processStream;
-	processStream = 0;
+	if (processStream)
+	{
+		delete processStream;
+		processStream = nullptr;
+}
 
 }
-const bool Client::ProcessData(Client *  instance, TeraPacket* packet, Stream * processStream)
+const bool Client::ProcessData(Client *  instance, Stream * processStream, OpCode opCode)
 {
-	instance->Dump(packet->_raw, packet->_size, true);//logs hex text data to recvDump.txt
-	//std::cout << ">" << ServerUtils::HexString(packet->_raw, packet->_size) << std::endl;//------------DEBUGs
-
-
-	SendPacket* toSend = OpCodes::Get((packet->_opCode[0] << 8) | packet->_opCode[1]);
-	if (!toSend)
-	{
-		std::cout << "No resolution was found for Client OpCode[" << ServerUtils::HexString(packet->_opCode, 2) << "] OpCodes Resolutions need to be updated\n";
-		return true;
-	}
-
-	processStream->Clear();
-	if (packet->_size > 4)
-	{
-		processStream->Write(&packet->_raw[4], packet->_size - 4);
-		processStream->SetFront();
-	}
-
-	toSend->Process((OpCode)((packet->_opCode[0] << 8) | packet->_opCode[1]), processStream, instance);
+#ifdef DUMP_TRAFFIC
+	instance->Dump(processStream->_raw, processStream->_size, true);//logs hex text data to recvDump.txt
+	std::cout << ">" << ServerUtils::HexString(processStream->_raw, processStream->_size) << std::endl;
+#endif
+	const SendPacket const* toSend = nullptr;
+	if ((toSend = OpCodes::Get(opCode)))
+		toSend->Process(opCode, processStream, instance);
+	else
+		std::cout << "No resolution was found for Client OpCode[" << opCode << "] OpCodes Resolutions need to be updated\n";
 
 	return true;
 }
 
+void Client::Action(Client * instance, Server * server)
+{
+	ServerTimer::ServerTime sTime = ServerTimer::ServerTime(0.0f, 0.0f);
+	float frequencySeconds = 0.0f;
+
+	LARGE_INTEGER i;
+	LONGLONG start;
+	QueryPerformanceFrequency(&i);
+	frequencySeconds = (float)(i.QuadPart);
+	QueryPerformanceCounter(&i);
+	start = i.QuadPart;
+
+	instance->_workRunnging = true;
+	while (instance->_mainRun)
+	{
+		QueryPerformanceCounter(&i);
+		sTime.elapsedTime = (float)(i.QuadPart - start) / frequencySeconds;
+		start = i.QuadPart;
+		sTime.totalTime += sTime.elapsedTime;
+
+
+		instance->_effectEngine->Action(&sTime);
+		Sleep(1);
+	}
+	instance->_workRunnging = false;
+}
+
 const bool Client::IsVisibleClient(Client * c)
 {
+	std::lock_guard<std::mutex> lock(_visibleListMutex);
 	for (size_t i = 0; i < _visibleClients.size(); i++)
 	{
 		if (_visibleClients[i] == c)
@@ -178,195 +213,70 @@ const bool Client::IsVisibleClient(Client * c)
 }
 void Client::RemoveVisibleClient(Client * c)
 {
-	int j = -1;
+	std::lock_guard<std::mutex> lock(_visibleListMutex);
 	for (size_t i = 0; i < _visibleClients.size(); i++)
 	{
 		if (_visibleClients[i] == c)
 		{
-			j = i;
+			Player * p = c->GetSelectedPlayer();
+			if (p)
+				BroadcastSystem::BroadcastDespawnPlayer(this, p->_entityId, p->_subId);
+			
+			_visibleClients.erase(_visibleClients.begin() + i);
 			break;
 		}
 	}
 
-	if (j >= 0)
-	{
-		Stream s = Stream();
-		s.WriteInt16(0);
-		s.WriteInt16(S_DESPAWN_USER);
-
-		s.WriteInt64(c->_account->_selectedPlayer->_entityId);
-		s.WriteInt32(0); //unk
-
-		s.WritePos(0);
-		BroadcastSystem::Broadcast(this, &s, ME, 0);
-		s.Clear();
-
-
-		_visibleClients[j] = 0;
-		_visibleClients.erase(_visibleClients.begin() + j);
-	}
 }
 void Client::AddVisibleClient(Client * c)
 {
-	Player * p = _account->_selectedPlayer;
-	Stream* data = new  Stream();
-	data->WriteInt16(0);
-	data->WriteInt16(S_SPAWN_USER);
-
-	data->WriteInt64(0);
+	if (!c || !c->HasSelectedPlayer())
+		return;
+	BroadcastSystem::BroadcastSpawnPlayer(this, c);
 
 
-
-	short namePos = data->NextPos();
-	short guildNamePos = data->NextPos();
-	short Title = data->NextPos();
-
-	short details1Pos = data->NextPos();
-	data->WriteInt16(32);
-
-	short gTitlePos = data->NextPos();
-	short gTitleIconPos = data->NextPos();
-
-	short details2Pos = data->NextPos();
-	data->WriteInt16(64);
-
-	data->WriteInt64(_account->_selectedPlayer->_entityId + 1);
-	data->WriteInt64(_entityId + 1);
-
-	data->WriteFloat(p->_position->_X + 10);
-	data->WriteFloat(p->_position->_Y + 10);
-	data->WriteFloat(p->_position->_Z + 10);
-	data->WriteInt16(p->_position->_heading);
-
-	data->WriteInt32(0); //relation ?? enemy / party member ...
-	data->WriteInt32(p->_model);
-	data->WriteInt16(0); //allawys 0?
-	data->WriteInt16(0); //unk2
-	data->WriteInt16(0); //unk3
-	data->WriteInt16(0); //unk4 allways 0?
-	data->WriteInt16(0); //unk5 0-3 ?
-
-	data->WriteByte(1);
-	data->WriteByte(1); //alive?
-
-	data->Write(p->_data, 8);
-
-	data->WriteInt32(p->_playerWarehouse->weapon);
-	data->WriteInt32(p->_playerWarehouse->armor);
-	data->WriteInt32(p->_playerWarehouse->gloves);
-	data->WriteInt32(p->_playerWarehouse->boots);
-	data->WriteInt32(p->_playerWarehouse->innerWare);
-	data->WriteInt32(p->_playerWarehouse->skin1);
-	data->WriteInt32(p->_playerWarehouse->skin2);
-
-	data->WriteInt32(0); //unk 0-1-3 ??
-	data->WriteInt32(0); //mount...
-	data->WriteInt32(7); //7 ???
-	data->WriteInt32(0); // Title id
-
-
-
-	data->WriteInt64(0);
-
-	data->WriteInt64(0);
-	data->WriteInt64(0);
-
-	data->WriteInt64(0);
-	data->WriteInt64(0);
-
-	data->WriteInt64(0);
-	data->WriteInt64(0);
-
-	data->WriteInt32(0);	  //unk s
-	data->WriteInt16(0);
-	data->WriteByte(0); //allaways 0?
-
-	data->WriteByte(0);		  //enchants ??
-	data->WriteByte(0);		  //enchants ??
-	data->WriteByte(0);		  //enchants ??
-	data->WriteByte(0);		  //enchants ??
-
-	data->WriteByte(0);
-	data->WriteByte(0);
-
-	data->WriteInt16(p->_level);
-
-	data->WriteInt16(0);   //always 0?
-	data->WriteInt32(0);   //always 0?
-	data->WriteInt32(0);
-	data->WriteByte(0); //unk boolean?
-
-	data->WriteInt32(0);	//skins ?
-	data->WriteInt32(0);	//skins ?
-	data->WriteInt32(0);	//skins ?
-	data->WriteInt32(0);	//skins ?
-	data->WriteInt32(0);	//skins ?
-	data->WriteInt32(0); //costumeDye # ?
-
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-
-	data->WriteByte(0); //boolean?
-
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-
-	data->WriteByte(1); //boolean?
-	data->WriteInt32(0);
-
-	data->WriteFloat(1.0f); //allways 1.0f?
-
-	data->WritePos(namePos);
-	data->WriteString(p->_name);
-
-	data->WritePos(guildNamePos);
-	data->WriteInt16(0);
-	data->WritePos(Title);
-	data->WriteInt16(0);
-
-	data->WritePos(details1Pos);
-	data->Write(p->_details1, 32);
-
-
-	data->WritePos(gTitlePos);
-	data->WriteInt16(0);
-	data->WritePos(gTitleIconPos);
-	data->WriteInt16(0);
-
-	data->WritePos(details2Pos);
-	data->Write(p->_details2, 64);
-
-	data->WritePos(0); //size
-	Send(data);
-	data->Clear();
-
-	delete data;
-	data = 0;
-
+	std::lock_guard<std::mutex> lock(_visibleListMutex);
 	_visibleClients.push_back(c);
+}
+void Client::ClearVisibleClients()
+{
+	std::lock_guard<std::mutex> lock(_visibleListMutex);
+	for (size_t i = 0; i < _visibleClients.size(); i++)
+	{
+		if (_visibleClients[i])
+		{
+			_visibleClients[i]->RemoveVisibleClient(this);
+			RemoveVisibleClient(_visibleClients[i]);
+		}
+	}
+	_visibleClients.clear();
+}
+void Client::Disappear()
+{
+	for (size_t i = 0; i < _visibleClients.size(); i++)
+	{
+		if (_visibleClients[i])
+			_visibleClients[i]->RemoveVisibleClient(this);
+	}
+}
+const bool Client::HasSelectedPlayer()
+{
+	return IsLoggedIn() && _account->GetSelectedPlayer();
 }
 
 const bool Client::Send(byte * data, unsigned int length)
 {
+#ifdef DUMP_TRAFFIC
 	Dump(data, length, false); //logs hex text data to sendDump.txt
-	//std::cout << "<" << ServerUtils::HexString(data, length) << std::endl;//------------DEBUG
-
+	std::cout << "<" << ServerUtils::HexString(data, length) << std::endl;
+#endif
 	_sendMutex.lock();
-
 	_session->Encrypt(data, length);
-	int ret = send(_socket, (const char*)data, length, 0);
-
 	_sendMutex.unlock();
 
-	if (ret == SOCKET_ERROR)
-		return false;
-
-	return true;
+	int ret = send(_socket, (const char*)data, length, 0);
+	return (ret == SOCKET_ERROR) ? false : true;
 }
-
 const bool Client::Send(Stream * s)
 {
 	return Send(s->_raw, s->_size);
@@ -397,20 +307,49 @@ void Client::Dump(byte* data, unsigned int length, bool recv)
 	}
 }
 
-Player * Client::LockPlayer()
+void Client::SendToVisibleClients(Stream * data)
 {
-	if (_playerLocked)
+	std::lock_guard<std::mutex> lock(_visibleListMutex);
+	for (size_t i = 0; i < _visibleClients.size(); i++)
+	{
+		if (_visibleClients[i])
+			_visibleClients[i]->Send(data);
+	}
+}
+
+void Client::LoginClient(Account * account)
+{
+	if (_loggedIn || account->_owner)
+		return;
+	_loggedIn = true;
+	_account = account;
+	_account->_owner = this;
+}
+
+void Client::LogoutClient()
+{
+	if (!_loggedIn)
+		return;
+	_loggedIn = false;
+	_account->_owner = nullptr;
+	_account = 0;
+}
+
+const bool Client::IsLoggedIn()
+{
+	return _loggedIn && _account;
+}
+
+Account * Client::GetAccount()
+{
+	return _account;
+}
+
+Player * Client::GetSelectedPlayer()
+{
+	if (!_loggedIn)
 		return nullptr;
-	_playerLocked = true;
-	return _account->_selectedPlayer;
+	return _account->GetSelectedPlayer();
 }
-const bool Client::IsLocked()
-{
-	return _playerLocked;
-}
-void Client::UnlockPlayer()
-{
-	if (_playerLocked)
-		_playerLocked = false;
-}
+
 

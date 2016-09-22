@@ -4,51 +4,56 @@
 #include <vector>
 #include <string>
 
-enum SkillType : int
-{
-	EMOTE,
-	PROJECTILE,
-	HEAL,
-	DEBUFF,
-	BUFF,
-	DAMAGE,
-	BLOCK,
-	DAMAGE_ABSORPTION,
-	EVADE,
-	EFFECT,
-	SUMMON,
-	STANCE,
+#include "SkillStructs.h"
+#include "ProjectileStructs.h"
 
-};
 
-enum Affecting :short
-{
-	A_ME,
-	A_ENEMY,
-	A_PARTY,
-	A_GUILD,
-	A_RAID,
-	A_ALL
-};
-class Effect;
 class Skill
 {
 public:
 	Skill();
-	int _id;
-	int _skillId;
-	short unk1;
-	short unk2;
-	short unk3;
+	std::vector<Targeting> _targetingList;
 
+	int
+		_nextSkill,
+		_templateId,
+		_id,
+		_baseId,
+		_level,
+		_needSkill,
+		_parentId,
+		_totalStk,
+		_totalStkPvP;
 
-	float _castTime;
-	float _cooldown;
-	int		_mpCost;
+	std::vector<SkillAction> _actions;
+	std::string
+		_category,
+		_name;
+
+	float
+		_attackRangeMax,
+		_attackRange,
+		_totalAttack,
+		_timeRate,
+		_totalAtk;
+
+	bool
+		_autoUse,
+		_needWeapon,
+		_changeDirToChanter,
+		_keepMovingCharge,
+		_keptMovingCharge,
+		_useSkillWhileReaction;
+
+		
 	SkillType _type;
-	Affecting _affecting;
-	std::string _name;
-	Skill* Clone();
+	PushTarget _pushtarget;
+	Animation _animation;
+	CharginStageList _chargingStageList;
+	Precondition _precondition;
+	ProjectileData _projectileData;
+	PushTarget _pushTarget;
+	AdjustTargetingPos _adjustTargetingPos;
 };
 
 #endif

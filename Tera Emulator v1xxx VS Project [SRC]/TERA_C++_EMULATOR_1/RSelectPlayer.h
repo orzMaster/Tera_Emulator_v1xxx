@@ -9,7 +9,7 @@ public:
 	RSelectPlayer();
 
 	// Inherited via SendPacket
-	virtual void Process(OpCode opCode, Stream * data, Client * caller) override;
+	virtual void Process(OpCode opCode, Stream * data, Client * caller)const override;
 };
 
 //   A801CCA9 32014601 20006601 40005D2B

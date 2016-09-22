@@ -7,6 +7,7 @@ Listener::Listener(const char* ip, unsigned int port, unsigned int maxClients) :
 	_ip = ip;
 	_listen = false;
 	_initialized = false;
+	_listening = false;
 }
 
 
@@ -62,7 +63,7 @@ const bool Listener::Start(Server* instance)
 	}
 
 	_listen = true;
-	_listenerThread = std::thread(Listen, std::ref(_listeningSocket), instance);
+	_listenerThread = std::thread(Listen, this, instance);
 	_listenerThread.detach();
 
 	return true;
@@ -77,6 +78,18 @@ const bool Listener::Stop()
 	shutdown(_listeningSocket, SD_BOTH);
 	closesocket(_listeningSocket);
 
+	int times = 0;
+	while (_listening)
+	{
+		times++;
+		if (times >= 500)
+			break;
+		continue;
+	}
+	
+		
+	
+
 	return true;
 }
 
@@ -85,28 +98,22 @@ const bool Listener::IsValid()
 	return _initialized;
 }
 
-void Listener::Listen(SOCKET& socket, Server* server)
+void Listener::Listen(Listener* linstance, Server* server)
 {
-	_listening = true;
+	linstance->_listening = true;
 	int length = sizeof(sockaddr);
-	while (_listen)
+	while (linstance->_listen)
 	{
 		SOCKET newConnection;
 		sockaddr_in connectionData;
 
-		newConnection = accept(socket, (sockaddr*)&connectionData, &length);
+		newConnection = accept(linstance->_listeningSocket, (sockaddr*)&connectionData, &length);
 		if (newConnection != INVALID_SOCKET)
 		{
 			Client* con = new Client(newConnection, connectionData, server);
 			server->NewConnection(con);
 		}
 	}
-
-	_listening = false;
-	_initialized = false;
-	//std::cout << ">Listener closed!\n"; for DEBUGGING
+	linstance->_listening = false;
+	linstance->_initialized = false;
 }
-
-bool Listener::_listen = false;
-bool Listener::_listening = false;
-bool Listener::_initialized = false;

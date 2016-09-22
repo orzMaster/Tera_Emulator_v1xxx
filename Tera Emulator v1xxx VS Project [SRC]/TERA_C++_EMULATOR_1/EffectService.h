@@ -4,19 +4,19 @@
 #include <vector>
 #include <mutex>
 #include <fstream>
+#include "AbnormalityEffect.h"
 
-class Effect;
 class EffectService
 {
 public:
 	static const bool LoadEffects(const char * file = "data/effects.bin");
 
-	static Effect * ResolveEffectId(int id);
+	
 
 	static void Release();
 	static unsigned int GetCount();
 private:
-	static std::vector<Effect *> _effects;
+	static std::vector<AbnormalityEffect *> _effects;
 };
 
 #endif

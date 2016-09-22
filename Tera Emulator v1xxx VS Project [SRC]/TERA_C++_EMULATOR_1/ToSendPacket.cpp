@@ -13,7 +13,11 @@ ToSendPacket::ToSendPacket(Client * callerClient, Stream * data, BC_TYPE type,bo
 
 ToSendPacket::~ToSendPacket()
 {
-	_args = 0;
+	if (_args)
+	{
+		delete[] _args;
+		_args = nullptr;
+	}
 	delete _data;
 	_data = 0;
 }

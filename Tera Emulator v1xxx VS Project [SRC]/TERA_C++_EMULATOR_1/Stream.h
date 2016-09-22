@@ -3,6 +3,8 @@
 ////////Created to be used with Tera Emulator v1xxx/////////
 ////////////////////////////////////////////////////////////
 
+//use only for big-edian
+
 #ifndef STREAM_H
 #define STREAM_H
 #include "Crypt\data_type.hpp"
@@ -20,14 +22,16 @@ class Stream
 {
 public:
 	Stream();
+	Stream(std::istream * str);
 	Stream(unsigned int size);
 	Stream(byte* data, unsigned int size);
 	Stream(std::vector<byte>& vec);
 	~Stream();
 
-private:
-	void Resize(unsigned int size);
+
+	
 public:
+	void Resize(unsigned int size);
 	void Write(byte* data, unsigned int size);
 	void WriteHexString(std::string data);
 	void WriteString(std::string s, bool reverse = false);
@@ -43,10 +47,11 @@ public:
 	short ReadInt16();
 	int  ReadInt32();
 	float ReadFloat();
+	long long ReadInt64();
 	byte ReadByte();
 
-	std::string ReadString();
-	std::string ReadReceivedString();
+	std::string ReadUTF16StringLittleEdianToASCII();
+	std::string ReadUTF16StringBigEdianToASCII();
 	std::string ReadASCIIString();
 
 	void Clear();

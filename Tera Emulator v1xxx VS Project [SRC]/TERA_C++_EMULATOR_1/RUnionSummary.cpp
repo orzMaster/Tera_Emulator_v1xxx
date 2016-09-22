@@ -6,7 +6,7 @@ RUnionSummary::RUnionSummary() : SendPacket(C_UNION_SUMMARY)
 {
 }
 
-void RUnionSummary::Process(OpCode opCode, Stream * data, Client * caller)
+void RUnionSummary::Process(OpCode opCode, Stream * data, Client * caller)const
 {
 	data->Clear();
 

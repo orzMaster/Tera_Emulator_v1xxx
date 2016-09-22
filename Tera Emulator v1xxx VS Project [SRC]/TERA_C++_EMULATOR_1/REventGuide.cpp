@@ -4,7 +4,7 @@ REventGuide::REventGuide() : SendPacket(C_EVENT_GUIDE)
 {
 }
 
-void REventGuide::Process(OpCode opCode, Stream * data, Client * caller)
+void REventGuide::Process(OpCode opCode, Stream * data, Client * caller)const
 {
 	data->WriteInt16(8);
 	data->WriteInt16(S_EVENT_GUIDE);

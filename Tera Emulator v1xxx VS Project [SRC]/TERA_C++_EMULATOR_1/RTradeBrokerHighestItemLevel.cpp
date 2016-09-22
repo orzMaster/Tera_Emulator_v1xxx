@@ -5,7 +5,7 @@ RTradeBrokerHighestItemLevel::RTradeBrokerHighestItemLevel() : SendPacket(C_TRAD
 {
 }
 
-void RTradeBrokerHighestItemLevel::Process(OpCode opCode, Stream * data, Client * caller)
+void RTradeBrokerHighestItemLevel::Process(OpCode opCode, Stream * data, Client * caller)const
 {
 	data->WriteInt16(0);
 	data->WriteInt16(S_TRADE_BROKER_HIGHEST_ITEM_LEVEL);

@@ -3,44 +3,60 @@
 
 #include <vector>
 #include <string>
+#include "Entity.h"
 
 #include "Crypt\data_type.hpp"
 
-#define MAX_PLAYERS_PER_ACCOUNT 20
+#define MAX_PLAYERS_PER_ACCOUNT 8
 
-class Player;
-class Account
+class Player; class Client;
+class Account : public Entity
 {
+	friend class PlayerService;
 public:
 	Account();
 	~Account();
 
-	unsigned int GetPlayerCount();
-	Player* GetPlayer(int id);
-	Player* GetPlayer(byte lobbyid);
-	void AddPlayer(Player* p);
+	const unsigned int GetPlayerCount() const;
 
-	std::vector<Player*> _playerList;
+	Player* GetPlayer(int id);
+	Player* GetPlayerByLobbyId(int lobbyid);
+	Player* GetSelectedPlayer();
+	Player*  SelectPlayer(int lobbyId);
+
+	void SendPlayerList(Client* caller);
+	void AddPlayer(Player* p);
+	const bool RemovePlayer(Player * p);
+
+	void SendAccountSettings(Client * caller, bool broadcast = true);
+
+	std::string
+		_username,
+		_password,
+		_email,
+		_hardwareInfo;
+
+	int _lasOnlineUtc,
+		_accountSettingsSize,
+		_coins,
+		_playerCount,
+		_lasPlayerSubId;
+
+	byte  
+		*_accountSettings,
+		_lastLobbyId;
+
+	long long 
+		_remainingPlayTime;
+
+
+	bool
+		_isGm;
+	Client *
+		_owner;
+private:
 	Player * _selectedPlayer;
-	std::string _username;
-	std::string _password;
-	std::string _email;
-	int _lasOnlineUtc;
-	bool _isGm;
-	bool _loggedIn;
-	int _id;
-	short _coins;
-	int _playerCount;
-	short _visibleRange;
-	short _remainingPlayTime;
-	byte* _ticket;
-	byte _lastLobbyId;
-	int _ticketSize;
-	byte * _accountSettings;
-	unsigned short _accountSettingsSize;
-	std::string _hardwareInfo;
-	int _channel;
-	//todo:expand
+	std::vector<Player*> _playerList;
 };
 #endif
 

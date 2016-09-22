@@ -45,16 +45,12 @@ Session::~Session()
 
 void Session::Encrypt(byte *data, int length)
 {
-	Lock();
 	Encryptor->ApplyCryptor(data, length);
-	Unlock();
 }
 
 void Session::Decrypt(byte *data, int length)
 {
-	Lock();
 	Decryptor->ApplyCryptor(data, length);
-	Unlock();
 }
 
 void Session::XorKey(byte *result, byte *key1, int Length1, byte *key2, int Length2)

@@ -30,7 +30,7 @@ public:
 	float ReadFloat();
 	byte ReadByte();
 	std::string ReadASCIIString();
-
+	std::string ReadUnicodeString();
 	void Clear();
 	void ClearFile();
 	void Close();

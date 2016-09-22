@@ -1,19 +1,7 @@
 #include "Passivity.h"
+#include <memory>
 
-
-
-Passivity::Passivity(PassivityType type)
+Passivity::Passivity()
 {
-	_type = type;
-}
-
-
-Passivity::~Passivity()
-{
-	for (size_t i = 0; i < _effects.size(); i++)
-	{
-		delete _effects[i];
-		_effects[i] = 0;
-	}
-	_effects.clear();
+	memset(this, 0, sizeof Passivity); //init all with 0
 }

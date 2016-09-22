@@ -5,7 +5,7 @@
 #include <string>
 
 #include "Entity.h"
-#include "WorldPosition.h"
+#include "CreatureBase.h"
 
 enum CreatureType : int {
 	MONSTER = 0,
@@ -16,7 +16,6 @@ enum MonsterType : int
 {
 
 };
-
 enum NpcType : int
 {
 	BANKER = 1,
@@ -26,13 +25,11 @@ enum NpcType : int
 
 };
 
-class WorldSystem; class Client;  class Area; class Stream; class AIElement; class Bonus; class CreatureStats; class AbnormalityManager;
-class Creature : public Entity
+class WorldSystem; class Client;  class Area; class Stream; class AIElement; class Bonus; class CreatureStats; class CombatManager; class WorldPosition;
+class Creature : public Entity, public CreatureBase
 {
 	friend  class WorldSystem;
-	friend class StatsService;
-	friend class HuntingZone;
-
+public:
 	Creature();
 	virtual ~Creature();
 
@@ -44,20 +41,17 @@ class Creature : public Entity
 
 	Creature * Clone();
 
-	WorldPosition  _position;
+	WorldPosition*  _position;
 	Area * _area;
 
 	Stream * _spawnData;
 	Stream * _despawnData;
 
-	CreatureStats* _stats;
+
 	bool _spawned;
 	CreatureType _type;
 	int _subType;
-	int _id;
-	std::vector<AIElement*> _aiElements;
-
-	AbnormalityManager * _abnormalityManager;
+	int _subId;
 };
 
 

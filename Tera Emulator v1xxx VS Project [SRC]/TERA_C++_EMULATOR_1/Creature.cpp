@@ -6,13 +6,13 @@
 #include "WorldSystem.h"
 #include "CreatureStats.h"
 
-Creature::Creature() : Entity()
+Creature::Creature() : Entity(), CreatureBase()
 {
 	_spawnData = new Stream();
 	_despawnData = new Stream();
 	_area = 0;
 	_spawned = false;
-	memset((void*)&_position, 0, sizeof WorldPosition); //zero the position
+	_position = new WorldPosition();
 }
 
 Creature::~Creature()
@@ -32,6 +32,12 @@ Creature::~Creature()
 		delete _despawnData;
 		_despawnData = 0;
 	}
+
+	if (_position)
+	{
+		delete _position;
+		_position = 0;
+	}
 }
 
 void Creature::Despawn()
@@ -40,7 +46,7 @@ void Creature::Despawn()
 		return;
 
 	std::vector<Client*> clients;
-	int count = WorldSystem::GetNearClients(&_position, _area, 1000, clients);
+	int count = WorldSystem::GetNearClients(_position, _area, 1000, clients);
 
 
 	for (int i = 0; i < count; i++)
@@ -61,16 +67,16 @@ void Creature::Spawn(Area * area, int huntingZoneId, WorldPosition * position)
 {
 	if (_spawned)
 		return;
-	_position = *position;
+	position->CopyTo(position);
 	_area = area;
-	_stats->_huntingZoneId = huntingZoneId;
+	
 	std::vector<Client*> clients;
 
 	//todo build spawn and despawn data [for type and stuff]
 
 
 
-	int count = WorldSystem::GetNearClients(&_position, _area, 1000, clients);
+	int count = WorldSystem::GetNearClients(_position, _area, 1000, clients);
 
 	for (int i = 0; i < count; i++)
 	{

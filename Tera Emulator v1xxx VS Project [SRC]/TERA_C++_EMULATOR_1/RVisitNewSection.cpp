@@ -1,48 +1,38 @@
 #include "RVisitNewSection.h"
-
+#include "Area.h"
 
 RVisitNewSection::RVisitNewSection() : SendPacket(C_VISIT_NEW_SECTION)
 {
 }
 
-void RVisitNewSection::Process(OpCode opCode, Stream * data, Client * caller)
+void RVisitNewSection::Process(OpCode opCode, Stream * data, Client * caller)const
 {
-	int unk1 = data->ReadInt32();
-	int unk2 = data->ReadInt32();
-	int areaId = data->ReadInt32();
-
-
-	Player::AreaSection temp = Player::AreaSection(unk1, unk2, areaId);
 	Player * p = 0;
-	while (!(p = caller->LockPlayer()))
-		continue;
+	if (!(p = caller->GetSelectedPlayer()))
+		return;
 
-	bool b = false;
-	for (size_t i = 0; i < p->_visitedSections.size(); i++)
-	{
-		if (p->_visitedSections[i] == temp)
-		{
-			b = true;
-			break;
-		}
-	}
+	//0001 0000 0019 0000 D9230900
+	int worldMapWorldId = data->ReadInt16();
+	data->ReadInt16(); //unk1
 
-	if (b)
-	{
-		p->_visitedSections.push_back(temp);
-	}
+	int worldMapGuardId = data->ReadInt16();
+	data->ReadInt16(); //unk1
 
-	p->_currentVisitedSection = temp;
+	int worldMapSectionId = data->ReadInt32();
 
-	caller->UnlockPlayer();
+	p->_position->_worldMapWorldId = worldMapWorldId;
+	p->_position->_worldMapGuardId = worldMapGuardId;
+	p->_position->_worldMapSectionId = worldMapSectionId;
+
+	//todo save sactionsIds so we can send them [for map to be discovered]...
 
 	data->Clear();
 	data->WriteInt16(19);
 	data->WriteInt16(S_VISIT_NEW_SECTION);
-	data->WriteByte(0);
-	data->WriteInt32(unk1);
-	data->WriteInt32(unk2);
-	data->WriteInt32(areaId);
+	data->WriteByte(1);
+	data->WriteInt32(p->_position->_worldMapWorldId);
+	data->WriteInt32(p->_position->_worldMapGuardId);
+	data->WriteInt32(p->_position->_worldMapSectionId);
 	data->WriteInt16(0);
 	BroadcastSystem::Broadcast(caller, data, ME, 0);
 }
