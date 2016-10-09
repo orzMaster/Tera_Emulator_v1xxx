@@ -20,7 +20,7 @@ class Player;
 class Server;
 class Stream;
 class Area;
-class EffectEngine; enum OpCode;
+class EffectEngine; enum OpCode; class ContractManager;
 class Client : public Entity
 {
 	friend class WorldObject;
@@ -30,6 +30,7 @@ class Client : public Entity
 	friend class BroadcastSystem;
 	friend class SendPacket;
 	friend class Server;
+	friend class SLoginArbiter;
 public:
 	Client(SOCKET socket, sockaddr_in sockData, Server* server);
 	~Client();
@@ -51,6 +52,9 @@ public:
 	const bool IsLoggedIn();
 	Account* GetAccount();
 	Player *GetSelectedPlayer();
+
+
+	void RequestContract(int unk1, int contract, int unk2, int unk3, int unk4, std::string unk5);
 private:
 	static void Run(Client * instance, Server* server);
 	static void Recevie(Client * instance);
@@ -74,8 +78,6 @@ private:
 	std::mutex _visibleListMutex;
 	std::condition_variable _canWork;
 
-
-
 	Crypt::Session *_session;
 	EffectEngine * _effectEngine;
 
@@ -84,7 +86,8 @@ private:
 	sockaddr_in _sockData;
 
 	int _connectionId;
-
+	int _clientVerision;
+	ContractManager * _contractManager;
 	std::vector<Client*> _visibleClients;
 };
 

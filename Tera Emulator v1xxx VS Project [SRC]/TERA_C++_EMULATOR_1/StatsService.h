@@ -10,7 +10,7 @@ public:
 
 	static CreatureStats* GetCreatureBaseStats(Creature * creature);
 	static void GetPlayerStartStats(Player* p);
-	static void SendPlayerStats(Client* c, bool broadcast = true);
+	static void SendPlayerStats(Client* c,bool sendToVisible = false, bool broadcast = true);
 	static void CalculatePlayerStats(Player * p);
 };
 

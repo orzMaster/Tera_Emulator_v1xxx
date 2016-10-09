@@ -46,8 +46,8 @@ void RMovePlayer::Process(OpCode opCode, Stream * stream, Client * caller)const
 	stream->WriteByte(1);
 	stream->WritePos(0);
 
-	//BroadcastSystem::Broadcast(caller, stream, MOVEMENT_BROADCAST, 0);
-	caller->SendToVisibleClients(stream);
+	BroadcastSystem::Broadcast(caller, stream, VISIBLE_CLIENTS, 0);
+	//caller->SendToVisibleClients(stream);
 	//WorldSystem::ProcessMovement(caller, x, y, z, w);
 }
 

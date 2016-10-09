@@ -27,9 +27,9 @@ public:
 	void SendPlayerList(Client* caller);
 	void AddPlayer(Player* p);
 	const bool RemovePlayer(Player * p);
-
+	void Logout();
 	void SendAccountSettings(Client * caller, bool broadcast = true);
-
+	void SendAccountPackageList(Client* caller, bool boradcast = true);
 	std::string
 		_username,
 		_password,

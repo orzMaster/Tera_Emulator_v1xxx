@@ -25,6 +25,11 @@ const bool InventorySlot::ClearSlot()
 	return true;
 }
 
+const bool InventorySlot::IsProfileSlot()
+{
+	return _id > 0 && _id <= 20;
+}
+
 const bool InventorySlot::operator<<(IItem * item)
 {
 	if (!_info)
@@ -62,6 +67,8 @@ const bool InventorySlot::operator^(InventorySlot * slot)
 	slot->_info = _info;
 	_info = temp;
 
+
+
 	return true;
 }
 
@@ -98,4 +105,42 @@ void SLOT_INFO::Clear()
 {
 	_passivities.clear();
 	memset(this, 0, sizeof SLOT_INFO);
+}
+
+const bool SLOT_INFO::CanStack()
+{
+	return _stackCount + 1 <= _item->_maxStack;
+}
+
+const bool SLOT_INFO::Stack()
+{
+	if (!CanStack())
+		return false;
+	_stackCount++;
+
+	return true;
+}
+
+const bool SLOT_INFO::operator==(SLOT_INFO* inf)
+{
+	if (_binderEntityId == inf->_binderEntityId &&
+		_crafterEntityId == inf->_crafterEntityId&&
+		_hasCrystals == inf->_hasCrystals &&
+		_itemId == inf->_itemId &&
+		_enchantLevel == inf->_enchantLevel&&
+		_isMasterworked == inf->_isMasterworked&&
+		_isAwakened == inf->_isAwakened&&
+		_isBinded == inf->_isBinded &&
+		_binderEntityId == inf->_binderEntityId&&
+		_isEnigmatic == inf->_isEnigmatic)
+		return true;
+
+	return false;
+}
+
+const bool SLOT_INFO::operator=(SLOT_INFO * inf)
+{
+	if (!inf || (memcpy_s(this, sizeof SLOT_INFO, inf, sizeof SLOT_INFO) != 0))
+		return false;
+	return true;
 }

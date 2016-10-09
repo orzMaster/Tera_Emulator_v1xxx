@@ -5,6 +5,8 @@
 #include "MessagingSystem.h"
 #include "StatsService.h"
 #include "CreatureStats.h"
+#include "PlayerService.h"
+#include "WorldSystem.h"
 
 RLoadTopoFin::RLoadTopoFin() : SendPacket(C_LOAD_TOPO_FIN)
 {
@@ -112,43 +114,42 @@ void RLoadTopoFin::Process(OpCode opCode, Stream * data, Client * caller)const
 	if (!WorldSystem::EnterWorld(caller))
 		return;
 
-	data->WriteInt16(30);
+	data->WriteInt16(28);
 	data->WriteInt16(S_SPAWN_ME);
 
-	data->WriteInt32(p->_entityId); //pid
-	data->WriteInt32(p->_subId); //pid
+	data->WriteInt32(p->_entityId); 
+	data->WriteInt32(p->_subId); 
 
 	data->WriteFloat(p->_position->_X);
 	data->WriteFloat(p->_position->_Y);
 	data->WriteFloat(p->_position->_Z);
 	data->WriteInt16(p->_position->_heading);
 	data->WriteInt16(p->_stats.GetHP() > 0 ? 1 : 0);
-	data->WriteInt16(0);
 	caller->Send(data);
 	data->Clear();
 
 	
-	data->WriteInt16(18);
-	data->WriteInt16(S_RESET_CHARM_STATUS);
-	data->WriteInt32(0);
-	data->WriteInt32(p->_entityId);
-	data->WriteInt32(p->_subId);
-	data->WriteInt16(0);
-	caller->Send(data);
-	data->Clear();
-
-	//MessagingSystem::SendSystemMessage(caller, "@888");
-
-	data->WriteInt16(23);
-	data->WriteInt16(S_ADD_CHARM_STATUS);
-	data->WriteInt32(p->_entityId);
-	data->WriteInt32(p->_subId);
-	data->WriteInt32(50300); //charm id?
-	data->WriteByte(1); // unk
-	data->WriteInt32(0x7FFFFFFF);
-	data->WriteInt16(0);
-	caller->Send(data);
-	data->Clear();
+	//data->WriteInt16(18);
+	//data->WriteInt16(S_RESET_CHARM_STATUS);
+	//data->WriteInt32(0);
+	//data->WriteInt32(p->_entityId);
+	//data->WriteInt32(p->_subId);
+	//data->WriteInt16(0);
+	//caller->Send(data);
+	//data->Clear();
+	//
+	//
+	//
+	//data->WriteInt16(23);
+	//data->WriteInt16(S_ADD_CHARM_STATUS);
+	//data->WriteInt32(p->_entityId);
+	//data->WriteInt32(p->_subId);
+	//data->WriteInt32(50300); //charm id?
+	//data->WriteByte(1); // unk
+	//data->WriteInt32(0x7FFFFFFF);
+	//data->WriteInt16(0);
+	//caller->Send(data);
+	//data->Clear();
 
 	StatsService::SendPlayerStats(caller, false);
 
@@ -162,51 +163,51 @@ void RLoadTopoFin::Process(OpCode opCode, Stream * data, Client * caller)const
 	caller->Send(data);
 	data->Clear();
 
-	data->WriteInt16(30);
-	data->WriteInt16(S_F2P_PremiumUser_Permission);
-	data->WriteInt16(1);		//unk
-	data->WriteInt16(20);		//unk
-	data->WriteInt32(5);		//unk
-	data->WriteFloat(1.0f);		//unk
-	data->WriteFloat(1.0f);		//unk
-	data->WriteInt32(20);		//unk
-	data->WriteInt32(1);		//unk
-	data->WriteInt16(0);		//unk
-	caller->Send(data);
-	data->Clear();
-
-	data->WriteInt16(18);
-	data->WriteInt16(S_CREST_INFO);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt16(0);
-	caller->Send(data);
-	data->Clear();
-
-	data->WriteInt16(0);
-	data->WriteInt16(S_LOAD_ACHIEVEMENT_LIST);
-	data->WriteInt32(0); 
-	data->WriteInt16(0);//count
-	data->WriteInt16(0);//next
-	data->WriteInt32(p->_entityId);
-	data->WriteInt32(p->_subId);
-	data->WriteInt32(1123); //unk
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt32(0);
-	data->WriteInt16(0);
-	data->WritePos(0);
-	caller->Send(data);
-	data->Clear();
-
-	data->WriteInt16(10);
-	data->WriteInt16(S_LOAD_SKILL_SCRIPT_LIST);
-	data->WriteInt32(0);
-	data->WriteInt16(0);
-	caller->Send(data);
-	data->Clear();
-
+	//data->WriteInt16(30);
+	//data->WriteInt16(S_F2P_PremiumUser_Permission);
+	//data->WriteInt16(1);		//unk
+	//data->WriteInt16(20);		//unk
+	//data->WriteInt32(5);		//unk
+	//data->WriteFloat(1.0f);		//unk
+	//data->WriteFloat(1.0f);		//unk
+	//data->WriteInt32(20);		//unk
+	//data->WriteInt32(1);		//unk
+	//data->WriteInt16(0);		//unk
+	//caller->Send(data);
+	//data->Clear();
+	//
+	//data->WriteInt16(18);
+	//data->WriteInt16(S_CREST_INFO);
+	//data->WriteInt32(0);
+	//data->WriteInt32(0);
+	//data->WriteInt32(0);
+	//data->WriteInt16(0);
+	//caller->Send(data);
+	//data->Clear();
+	//
+	//data->WriteInt16(0);
+	//data->WriteInt16(S_LOAD_ACHIEVEMENT_LIST);
+	//data->WriteInt32(0); 
+	//data->WriteInt16(0);//count
+	//data->WriteInt16(0);//next
+	//data->WriteInt32(p->_entityId);
+	//data->WriteInt32(p->_subId);
+	//data->WriteInt32(1123); //unk
+	//data->WriteInt32(0);
+	//data->WriteInt32(0);
+	//data->WriteInt32(0);
+	//data->WriteInt16(0);
+	//data->WritePos(0);
+	//caller->Send(data);
+	//data->Clear();
+	//
+	//data->WriteInt16(10);
+	//data->WriteInt16(S_LOAD_SKILL_SCRIPT_LIST);
+	//data->WriteInt32(0);
+	//data->WriteInt16(0);
+	//caller->Send(data);
+	//data->Clear();
+	//
 	data->WriteInt16(19);
 	data->WriteInt16(S_USER_STATUS);
 	data->WriteInt32(p->_entityId);
@@ -216,13 +217,13 @@ void RLoadTopoFin::Process(OpCode opCode, Stream * data, Client * caller)const
 	data->WriteByte(0);
 	caller->Send(data);
 	data->Clear();
-
-	data->WriteInt16(18);
-	data->WriteInt16(S_SKILL_PERIOD);
-	data->WriteInt32(0);
-	data->WriteInt32(p->_entityId);
-	data->WriteInt32(p->_subId);
-	data->WriteInt16(0);
-	caller->Send(data);
-	data->Clear();
+	//
+	//data->WriteInt16(18);
+	//data->WriteInt16(S_SKILL_PERIOD);
+	//data->WriteInt32(0);
+	//data->WriteInt32(p->_entityId);
+	//data->WriteInt32(p->_subId);
+	//data->WriteInt16(0);
+	//caller->Send(data);
+	//data->Clear();
 }

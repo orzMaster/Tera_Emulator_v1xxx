@@ -36,19 +36,23 @@ public:
 
 	const bool AddGold(long long gold);
 	const bool TakeGold(long long gold);
-	const bool IsFull();
+	InventorySlot* IsFull();
+	const SLOT_INFO const* HasItem(int itemId);
+	const int HasSlot(SLOT_INFO* slot);
 	void ClearGold();
 	void Sort();
 	
 
 	InventorySlot* operator[] (int i);
-	InventorySlot* operator[] (long long i);
+	InventorySlot* operator[] (long i);
 	void operator <<(int itemId);
+	void operator <<(SLOT_INFO* slotInfo);
 
 	void SendInventory(Client * client, byte show,bool broadcast = true);
 	
 	static void  BuildItemInfoEx(InventorySlot * slot,int itemId);
 	static void GetStarterInventory(Player* p);
+	void UseItem(Client* caller, InventorySlot* slot_1, InventorySlot* slot_2 = nullptr);
 
 	unsigned short
 		_slotCount,
@@ -68,7 +72,7 @@ public:
 	void RecalculateLevels();
 private:
 	void RedoSlotsIds();
-
+	
 
 	std::mutex _invLock;
 	Player * _owner;

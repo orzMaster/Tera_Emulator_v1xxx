@@ -1,5 +1,5 @@
 #include "RReturnToLobby.h"
-
+#include "WorldSystem.h"
 
 
 RReturnToLobby::RReturnToLobby() : SendPacket(C_RETURN_TO_LOBBY)

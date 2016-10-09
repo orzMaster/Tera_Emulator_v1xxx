@@ -2,7 +2,11 @@
 #include "Inventory.h"
 #include "ItemEnum.h"
 #include "StatsService.h"
+#include "LevelingService.h"
+#include "ServerTimer.h"
+#include "WorldSystem.h"
 #include "SkillService.h"
+#include "PlayerService.h"
 
 RCreatePlayer::RCreatePlayer() : SendPacket(C_CREATE_USER)
 {
@@ -71,6 +75,8 @@ void RCreatePlayer::Process(OpCode opCode, Stream * stream, Client * caller)cons
 		StatsService::GetPlayerStartStats(newPlayer);
 
 		SkillService::GetStarterSkillList(newPlayer);
+
+		PlayerService::UpdateAccountData(caller->GetAccount());
 
 		stream->Clear();
 		stream->WriteInt16(5);

@@ -7,6 +7,7 @@ RNpcGuildList::RNpcGuildList() : SendPacket(C_NPCGUILD_LIST)
 
 void RNpcGuildList::Process(OpCode opCode, Stream * data, Client * caller)const
 {
+	return;
 	Player* p = caller->GetSelectedPlayer();
 	if (!p)
 		return;

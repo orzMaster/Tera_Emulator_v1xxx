@@ -162,7 +162,7 @@ void WorldSystem::ShutdownSystem()
 	std::cout << "\n::Were ACTIVE[" << active << "] INACTIVE[" << inactive << "] areas. CLOSE_FAILS[" << fails << "]\n\n";
 }
 
-void WorldSystem::ReleaseData()
+void WorldSystem::Release()
 {
 	ShutdownSystem();
 	int t = 0;
@@ -334,7 +334,7 @@ void WorldSystem::Main(Area * instance)
 			for (size_t i = 0; i < instance->_clients.size(); i++)
 			{
 				Player * p = instance->_clients[i]->GetSelectedPlayer();
-				if (p && p->_position->DistanceTo(dp->X, dp->Y, dp->Z) < p->_visibleRange)
+				if (p && p->_position->DistanceTo(dp->X, dp->Y, dp->Z) <= p->_visibleRange)
 					BroadcastSystem::BroadcastSpawnDrop(instance->_clients[i], dp);
 			}
 		}
@@ -351,54 +351,99 @@ void WorldSystem::Main(Area * instance)
 	instance->_running = false;
 }
 
-void WorldSystem::DropItem(Client * c, int itemId)
+const bool WorldSystem::DropItem(Client * c, int itemId)
 {
-	Player * p = c->GetSelectedPlayer();
-	if (!p)
-		return;
-	Area * ar = p->_currentArea;
-	if (!ar)
-		return;
+	if (!c && !c->HasSelectedPlayer())
+		return false;
 
-	Drop* newDrop = new Drop(itemId, p->_position->_X + 5, p->_position->_Y + 5, p->_position->_Z);
-	ar->AddDrop(newDrop);
+	Player * p = c->GetSelectedPlayer();
+	if (p->_currentArea)
+	{
+		Drop* newDrop = new Drop(itemId, p->_position->_X, p->_position->_Y, p->_position->_Z);
+		p->_currentArea->AddDrop(newDrop);
+		return true;
+	}
+	return false;
+}
+
+const bool WorldSystem::DropItem(Client * c, SLOT_INFO * slotInfo)
+{
+	if (!c || !c->HasSelectedPlayer() || !slotInfo)
+		return false;
+	Player * p = c->GetSelectedPlayer();
+	if (p->_currentArea)
+	{
+		Drop* newDrop = new Drop(slotInfo->_itemId, p->_position->_X + 5, p->_position->_Y + 5, p->_position->_Z);
+		newDrop->_hasSlotInfo = 1;
+		newDrop->_slotInfo = slotInfo;
+		newDrop->AddOwner(p->_entityId);
+		p->_currentArea->AddDrop(newDrop);
+
+		return true;
+	}
+	return false;
 }
 
 void WorldSystem::LootItem(Client * caller, int dropId)
 {
 	if (!caller)
 		return;
-
 	Player* p = caller->GetSelectedPlayer();
-	if (!p)
+	Inventory * inv = nullptr;
+	if (!p || !(inv = p->_inventory))
 		return;
-	Inventory * inv = p->_inventory;
-	if (inv->IsFull())
+
+	Drop * dp = (Drop*)EntityService::GetDropEntity(dropId);
+	bool iAmOwner = false;
+	if (dp && (iAmOwner = dp->IsOwner(p->_entityId)))
 	{
-		MessagingSystem::SendSystemMessage(caller, "@350"); //test
-		return;
-	}
-	Drop * dp = (Drop*)EntityService::GetEntity(dropId);
-	if (dp)
-	{
-		if (dp->_ownersEntityIds.size() == 0)
+		if (dp->_hasSlotInfo)
 		{
-			(*inv) << dp->_itemId;
-			inv->SendInventory(caller,0);
-			p->_currentArea->RemoveDrop(dropId);
-			return;
+			short hasSlot = inv->HasSlot(dp->_slotInfo);
+			if (hasSlot > 0 && !(*inv)[(int)hasSlot]->_info->Stack())
+			{
+				if (inv->IsFull())
+				{
+					(*inv) << dp->_slotInfo;
+
+					inv->SendInventory(caller, 0);
+					MessagingSystem::SendLootItem(caller, dp->_itemId, dp->_stackCount);
+					p->_currentArea->RemoveDrop(dropId);
+
+				}
+				else
+					MessagingSystem::SendSystemMessage(caller, "@39\vItemName\v@item:"+ std::to_string(dp->_itemId));
+			}
+			else
+				if (inv->IsFull())
+				{
+					(*inv) << dp->_slotInfo;
+					inv->SendInventory(caller, 0);
+					MessagingSystem::SendLootItem(caller, dp->_itemId, dp->_stackCount);
+					p->_currentArea->RemoveDrop(dropId);
+				}
+				else
+					MessagingSystem::SendSystemMessage(caller, "@39\vItemName\v@item:" + std::to_string(dp->_itemId));
 		}
-		for (size_t i = 0; i < dp->_ownersEntityIds.size(); i++)
+		else
 		{
-			if (dp->_ownersEntityIds[i] == p->_entityId)
+			if (inv->IsFull())
 			{
 				(*inv) << dp->_itemId;
 				inv->SendInventory(caller, 0);
-				break;
+				MessagingSystem::SendLootItem(caller, dp->_itemId, dp->_stackCount);
+				p->_currentArea->RemoveDrop(dropId);
 			}
+			else
+				MessagingSystem::SendSystemMessage(caller, "@39\vItemName\v@item:" + std::to_string(dp->_itemId));
 		}
 
-		p->_currentArea->RemoveDrop(dropId);
+
+
+	}
+	else if (!iAmOwner)
+	{
+		MessagingSystem::SendSystemMessage(caller, "@377");//test
 	}
 }
 

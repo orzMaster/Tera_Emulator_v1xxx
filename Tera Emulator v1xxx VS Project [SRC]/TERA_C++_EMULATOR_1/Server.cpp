@@ -11,58 +11,7 @@
 #include "PassivityService.h"
 #include "ServerUtils.hpp"
 #include "EquipmentSet.h"
-
-#include "SLoginArbiter.h"
-#include "SCheckVersion.h"
-#include "SSetVisibleRange.h"
-#include "RGetPlayerList.h"
-#include "RCanCreatePlayer.h"
-#include "RStrEvaluateList.h"
-#include "RCheckUsername.h"
-#include "RCreatePlayer.h"
-#include "RHardwareInfo.h"
-#include "RReqVipSystemInfo.h"
-#include "RSelectPlayer.h"
-#include "RMovePlayer.h"
-#include "RSavePlayerAccountSettings.h"
-#include "RGetPlayerGuildLogo.h"
-#include "RDeletePlayer.h"
-#include "RChangeUserLobbySlotId.h"
-#include "RCancelDeletePlayer.h"
-#include "RLoadTopoFin.h"
-#include "RTradeBrokerHighestItemLevel.h"
-#include "RUnionSummary.h"
-#include "RServerTime.h"
-#include "RUpdateContentsPlayTime.h"
-#include "RSimpleTipRepeatCheck.h"
-#include "RSaveUserSettings.h"
-#include "RRequestInstoreProductList.h"
-#include "RGuardPkPolicy.h"
-#include "RDungeonCoolTImeList.h"
-#include "RRequestUserItemLevelInfo.h"
-#include "RDungeonClearCountList.h"
-#include "RNpcGuildList.h"
-#include "RRaignInfo.h"
-#include "RVisitNewSection.h"
-#include "REventGuide.h"
-#include "RShowInven.h"
-#include "RSkillLearnRequest.h"
-#include "RSkillLearnList.h"
-#include "RStartSkill.h"
-#include "RCancelSkill.h"
-#include "RNotifyLocationInAction.h"
-#include "RRequestGameStatPing.h"
-#include "RExit.h"
-#include "RChat.h"
-#include "RReturnToLobby.h"
-#include "RShowItemToolTipEx.h"
-#include "RDelItem.h"
-#include "RMoveItemPos.h"
-#include "REquipItem.h"
-#include "RRequestContract.h"
-#include "RInventoryAutoSort.h"
-#include "RUnequipItem.h"
-#include "RTryLootDropItem.h"
+#include "ContractService.h"
 
 Server::Server()
 {
@@ -73,6 +22,7 @@ Server::Server()
 
 Server::~Server()
 {
+	
 	if (_listener)
 	{
 		_listener->Stop();
@@ -80,14 +30,14 @@ Server::~Server()
 		_listener = 0;
 	}
 
-	
+
 	int times = 0; int connectedClients = _connectedClients; int clientCloseFails = 0;
 	for (size_t i = 0; i < _clients.size(); i++)
 	{
 		if (_clients[i])
 		{
 			_clients[i]->Close();
-			while ( _clients[i] && _clients[i]->_mainRunnging)
+			while (_clients[i] && _clients[i]->_mainRunnging)
 			{
 				times++;
 				if (times >= SERVER_CLIENTS_DISCONNECTION_TIMEOUT)
@@ -109,25 +59,25 @@ Server::~Server()
 		std::cout << ">>All [" << connectedClients << "] clients were disconnected succesfuly.\n\n";
 
 
-	
-	
-	WorldSystem::ReleaseData();			   //clean up world data
-	InventoryService::Release();		   //clean up inventory data
-	AbnormalitiesService::Release();	   //clean up abnormality data
-	SkillService::Release();			   //clean up skill data
-	PassivityService::Release();		   //clean up passivity data
-	EquipmentSet::Release();			   //clean up equipmentSet data
-	OpCodes::Release();					   //clean up opcodes resolutions
+
+
+	WorldSystem::Release();			   //cleanup world data
+	InventoryService::Release();		   //cleanup inventory data
+	AbnormalitiesService::Release();	   //cleanup abnormality data
+	SkillService::Release();			   //cleanup skill data
+	PassivityService::Release();		   //cleanup passivity data
+	EquipmentSet::Release();			   //cleanup equipmentSet data
+	OpCodes::Release();					   //cleanup opcodes resolutions
+	ContractService::Release();			   //cleanup contract resolutions
 
 	WSACleanup();
 	if (_mysqlDriver)
 	{
-		delete _mysqlDriver;			   //release mysql connection and clean up
+		delete _mysqlDriver;			   //release mysql connection and cleanup rest
 		_mysqlDriver = 0;
 	}
 
-
-	PlayerService::ReleaseData();		   //clean up player data
+	PlayerService::Release();		   //cleanup player data
 }
 
 const bool Server::Initialize()
@@ -207,63 +157,23 @@ const bool Server::Initialize()
 	std::cout << ">Player Service initialized! Loaded[" << PlayerService::GetAccountCount() << "] accounts\n\n";
 	std::cout << ">Data Loaded.\n\n\n";
 
-	OpCodes::Add(new RExit());
-	OpCodes::Add(new SCheckVersion());
-	OpCodes::Add(new SLoginArbiter());
-	OpCodes::Add(new SSetVisibleRange());
-	OpCodes::Add(new RGetPlayerList());
-	OpCodes::Add(new RHardwareInfo());
-	OpCodes::Add(new RReqVipSystemInfo());
-	OpCodes::Add(new RCanCreatePlayer());
-	OpCodes::Add(new RStrEvaluateList());
-	OpCodes::Add(new RCheckUsername());
-	OpCodes::Add(new RCreatePlayer());
-	OpCodes::Add(new RSelectPlayer());
-	OpCodes::Add(new RSavePlayerAccountSettings());
-	OpCodes::Add(new RMovePlayer());
-	OpCodes::Add(new RGetPlayerGuildLogo());
-	OpCodes::Add(new RDeletePlayer());
-	OpCodes::Add(new RChangeUserLobbySlotId());
-	OpCodes::Add(new RCancelDeletePlayer());
-	OpCodes::Add(new RLoadTopoFin());
-	OpCodes::Add(new RTradeBrokerHighestItemLevel());
-	OpCodes::Add(new RUnionSummary());
-	OpCodes::Add(new RServerTime());
-	OpCodes::Add(new RUpdateContentsPlayTime()); //todo
-	OpCodes::Add(new RSimpleTipRepeatCheck());
-	OpCodes::Add(new RSaveUserSettings());
-	OpCodes::Add(new RRequestInstoreProductList()); //todo
-	OpCodes::Add(new RGuardPkPolicy());
-	OpCodes::Add(new RDungeonCoolTimeList());
-	OpCodes::Add(new RRequestUserItemLevelInfo());
-	OpCodes::Add(new RDungeonClearCountList());
-	OpCodes::Add(new RNpcGuildList());
-	OpCodes::Add(new RRaignInfo());
-	OpCodes::Add(new RVisitNewSection());
-	OpCodes::Add(new REventGuide());
-	OpCodes::Add(new RShowInven());
-	OpCodes::Add(new RSkillLearnRequest());
-	OpCodes::Add(new RSkillLearnList()); //todo
-	OpCodes::Add(new RStartSkill());
-	OpCodes::Add(new RCancelSkill());
-	OpCodes::Add(new RNotifyLocationInAction());
-	OpCodes::Add(new RRequestGameStatPing());
-	OpCodes::Add(new RChat());
-	OpCodes::Add(new RReturnToLobby());
-	OpCodes::Add(new RShowItemToolTipEx());
-	OpCodes::Add(new REquipItem());
-	OpCodes::Add(new RDelItem());
-	OpCodes::Add(new RMoveItemPos());
-	OpCodes::Add(new RRequestContract());
-	OpCodes::Add(new RInventoryAutoSort());
-	OpCodes::Add(new RUnequipItem());
-	OpCodes::Add(new RTryLootDropItem());
+	if (!ContractService::Initialize())
+	{
+		std::cout << ">ContractService failed to initialize!\n\n";
+		return false;
+	}
+	std::cout << ">ContractService initialized! CONTRACT_COUNT[" << ContractService::GetCount() << "] CONTRACT_VERION[1007]\n\n";
 
-	std::cout << ">OpCode system initialized.Instancied [" << OpCodes::Count() << "] OpCodes Resolutions. OPCODE VERSION[4605]\n\n";
+	if (!OpCodes::Initialize())
+	{
+		std::cout << ">OpCodeService failed to initialize!\n\n";
+		return false;
+	}
+	std::cout << ">OpCodeService initialized.Instancied [" << OpCodes::Count() << "] OpCodes Resolutions. OPCODE VERSION[4702]\n\n";
 
 	BroadcastSystem::InitBroadcastService(1);
 	std::cout << ">BroadcastSystem Initialized!.\n\n";
-	
+
 	//WSAStartup----------------------------------------------------------
 	if (WSAStartup(MAKEWORD(2, 2), &_wsaData) != 0)
 	{

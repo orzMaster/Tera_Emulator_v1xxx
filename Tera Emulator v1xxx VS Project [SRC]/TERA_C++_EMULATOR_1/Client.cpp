@@ -11,8 +11,12 @@
 #include "Inventory.h"
 #include "ItemEnum.h"
 #include "EffectEngine.h"
+#include "WorldSystem.h"
+#include "ContractManager.h"
+#include "Contract.h"
+#include "ContractService.h"
 
-//#define DUMP_TRAFFIC 0
+//#define DUMP_TRAFFIC 1
 
 Client::Client(SOCKET socket, sockaddr_in sockData, Server * server) : Entity()
 {
@@ -22,6 +26,8 @@ Client::Client(SOCKET socket, sockaddr_in sockData, Server * server) : Entity()
 	_session = 0;
 	_connectionId = -1;
 	_effectEngine = new EffectEngine(server, this);
+	_contractManager = new ContractManager(this, server);
+
 
 	int val = 1;
 	setsockopt(_socket, SOL_SOCKET, SO_KEEPALIVE, (const char*)&val, sizeof val);
@@ -50,6 +56,11 @@ void Client::Close()
 	shutdown(_socket, SD_BOTH);
 	closesocket(_socket);
 	_socket == INVALID_SOCKET;
+}
+void Client::RequestContract(int unk1, int contract, int unk2, int unk3, int unk4, std::string unk5)
+{
+	//todo checks here
+	_contractManager->RequestContract(unk1, contract, unk2, unk3, unk4, unk5);
 }
 void Client::Run(Client * instance, Server* server)
 {
@@ -167,7 +178,10 @@ const bool Client::ProcessData(Client *  instance, Stream * processStream, OpCod
 #endif
 	const SendPacket const* toSend = nullptr;
 	if ((toSend = OpCodes::Get(opCode)))
+	{
 		toSend->Process(opCode, processStream, instance);
+	
+	}
 	else
 		std::cout << "No resolution was found for Client OpCode[" << opCode << "] OpCodes Resolutions need to be updated\n";
 
@@ -193,9 +207,10 @@ void Client::Action(Client * instance, Server * server)
 		sTime.elapsedTime = (float)(i.QuadPart - start) / frequencySeconds;
 		start = i.QuadPart;
 		sTime.totalTime += sTime.elapsedTime;
-
+		instance->_contractManager->Run(&sTime);
 
 		instance->_effectEngine->Action(&sTime);
+		
 		Sleep(1);
 	}
 	instance->_workRunnging = false;
@@ -331,8 +346,8 @@ void Client::LogoutClient()
 	if (!_loggedIn)
 		return;
 	_loggedIn = false;
-	_account->_owner = nullptr;
-	_account = 0;
+	_account->Logout();
+	_account = nullptr;
 }
 
 const bool Client::IsLoggedIn()

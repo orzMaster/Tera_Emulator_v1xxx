@@ -11,7 +11,7 @@
 
 #define AREA_UPDATE_TIMEOUT 100
 
-class Player; class Account; class Area; class WorldPosition; class Client; class WorldObject; class Creature; class Projectile; class EffectZone; class HuntingZone; class CreatureBase;
+class Player; class Account; class Area; class WorldPosition; class Client; class WorldObject; class Creature; class Projectile; class EffectZone; class HuntingZone; class CreatureBase; class SLOT_INFO;
 class WorldSystem
 {
 	friend class Server;
@@ -33,7 +33,7 @@ public:
 
 	static void StartSystem();
 	static void ShutdownSystem();
-	static void ReleaseData();
+	static void Release();
 
 	static void ProcessMovement(Client* client, float prevX, float prevY, float prevZ, short prevH);
 	static const int GetNearClients(WorldPosition* _point, Area* _area, int range, std::vector<Client*>& _outClients);
@@ -47,7 +47,8 @@ public:
 	static void Main(Area* instance);
 
 
-	static void DropItem(Client * c, int itemId);
+	static const bool DropItem(Client * c, int itemId);
+	static const bool DropItem(Client * c, SLOT_INFO * slotInfo);
 	static void DropItem(CreatureBase * c, int itemId);
 	static void LootItem(Client* caller, int itemId);
 private:

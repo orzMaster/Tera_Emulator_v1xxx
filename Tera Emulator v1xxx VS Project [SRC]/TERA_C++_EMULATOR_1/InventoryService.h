@@ -4,7 +4,7 @@
 
 #include <vector>
 
-class Client; class Account; class IItem;
+class Client; class Account; class IItem; class InventorySlot;
 
 class InventoryService
 {
@@ -15,6 +15,7 @@ public:
 	static void ResolveInventory(std::vector<int> & _ids, std::vector<IItem*> & out_items);
 	static IItem * ResolveItem(int id);
 	static void Release();
+	static const bool UseItem(InventorySlot* slot, Client * caller);
 	
 	static std::vector<IItem*> _items;
 };

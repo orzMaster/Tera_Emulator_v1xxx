@@ -2,12 +2,14 @@
 #include "Inventory.h"
 
 
+
 RRequestUserItemLevelInfo::RRequestUserItemLevelInfo() :SendPacket(C_REQUEST_USER_ITEMLEVEL_INFO)
 {
 }
 
 void RRequestUserItemLevelInfo::Process(OpCode opCode, Stream * stream, Client * caller)const
 {
+	
 	Player* p = caller->GetSelectedPlayer();
 	if (!p)
 		return;

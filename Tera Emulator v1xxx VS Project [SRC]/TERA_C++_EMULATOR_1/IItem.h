@@ -6,15 +6,17 @@
 #include "Crypt\data_type.hpp"
 #include "PlayerEnums.h"
 #include "ItemEnum.h"
-#include "Entity.h"
+#include "ItemEntity.h"
 
-class IItem : public Entity
+class IItem : public ItemEntity
 {
 public:
 	IItem();
 	~IItem();
 	int operator ()(int);
 
+	std::vector<PlayerClass> _requiredClasses;
+	std::vector<PlayerRace> _requiredRace;
 	int
 		_minAtk,
 		_maxAtk,
@@ -77,7 +79,6 @@ public:
 		_linkMasterpiecePassivityCategoryId,
 		_linkPassivityCategoryId,
 		_linkPassivityId,
-		_requiredClass,
 		_name,
 		_linkSkillId;
 

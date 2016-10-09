@@ -17,14 +17,49 @@ void RRequestContract::Process(OpCode opCode, Stream * data, Client * caller) co
 	data->_pos = nameOffset;
 	std::string contractorName = data->ReadUTF16StringBigEdianToASCII();
 
-	data->Clear();
-	data->WriteInt16(8);
-	data->WriteInt16(S_REPLY_REQUEST_CONTRACT);
-	data->WriteInt32(contract);
-	caller->Send(data);
+	caller->RequestContract(unk1, contract, unk2, unk3, unk4, contractorName);
 
-	data->Clear();
-	data->WriteInt16(4);
-	data->WriteInt16(S_BIND_ITEM_BEGIN);
-	caller->Send(data);
+	//data->Clear();
+	//data->WriteInt16(8);
+	//data->WriteInt16(S_REPLY_REQUEST_CONTRACT);
+	//data->WriteInt32(contract);
+	//caller->Send(data);
+	//data->Clear();
+
+	//if (contract == 34) //enchant
+	//{
+	//	Player* p = caller->GetSelectedPlayer();
+	//	if (!p)
+	//		return;
+	//	
+	//	data->WriteInt16(0);
+	//	data->WriteInt16(S_REQUEST_CONTRACT);
+	//	short namePos = data->NextPos();
+	//	short unkPos = data->NextPos();
+	//	short unkPos2 = data->NextPos();
+	//	data->WriteInt16(17); //unk [size]?
+	//
+	//	data->WriteInt32(p->_entityId);
+	//	data->WriteInt32(p->_subId);
+	//
+	//	data->WriteInt64(0); //unk
+	//	data->WriteInt32(contract);
+	//	data->WriteInt64(0); // unk [729734]
+	//	data->WriteInt32(0);
+	//	
+	//	data->WritePos(namePos);
+	//	data->WriteString(p->_name);
+	//
+	//	data->WritePos(unkPos);
+	//	data->WriteInt16(0);
+	//	data->WritePos(unkPos2);
+	//	data->WriteByte(0);
+	//	data->WriteInt32(11); 
+	//	data->WriteInt64(0);
+	//	data->WriteInt32(0);
+	//
+	//	data->WritePos(0);
+	//	caller->Send(data);
+	//	data->Clear();
+	//}
 }

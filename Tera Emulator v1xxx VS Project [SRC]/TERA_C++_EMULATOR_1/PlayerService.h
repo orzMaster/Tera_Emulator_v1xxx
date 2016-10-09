@@ -27,9 +27,10 @@ public:
 	static void UpdateAccountData(Account * account);
 	static void SendPlayerSettings(Client* client, bool broadcast = true);
 
-	static void ReleaseData();
+	static void Release();
 
 	static void SendExternalChange(Client * caller,bool sendToVisivle = true, bool broadcast = true);
+	static void SendVipSystemInfo(Client* caller, bool broadcast = true);
 private:
 
 	static std::vector<Account*> _accounts;

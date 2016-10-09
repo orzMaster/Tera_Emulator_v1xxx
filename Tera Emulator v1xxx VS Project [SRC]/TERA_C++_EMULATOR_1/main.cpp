@@ -5,9 +5,7 @@
 #include "EntityService.h"
 #include "WorldSystem.h"
 
-#ifndef SERVER_VERSION
-#define SERVER_VERSION 1050
-#endif
+
 
 int main() {
 

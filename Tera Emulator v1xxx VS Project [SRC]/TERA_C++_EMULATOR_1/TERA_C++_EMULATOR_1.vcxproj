@@ -234,6 +234,7 @@
   <ItemGroup>
     <ClCompile Include="AbnormalitiesService.cpp" />
     <ClCompile Include="AbnormalityEffect.cpp" />
+    <ClCompile Include="BindContract.cpp" />
     <ClCompile Include="CombatManager.cpp" />
     <ClCompile Include="Account.cpp" />
     <ClCompile Include="Area.cpp" />
@@ -241,6 +242,9 @@
     <ClCompile Include="BroadcastService.cpp" />
     <ClCompile Include="ChatSystem.cpp" />
     <ClCompile Include="Client.cpp" />
+    <ClCompile Include="Contract.cpp" />
+    <ClCompile Include="ContractManager.cpp" />
+    <ClCompile Include="ContractService.cpp" />
     <ClCompile Include="CraftingSystem.cpp" />
     <ClCompile Include="Creature.cpp" />
     <ClCompile Include="CreatureStats.cpp" />
@@ -251,9 +255,11 @@
     <ClCompile Include="Crypt\Sha.cpp" />
     <ClCompile Include="Crypt\utils.cpp" />
     <ClCompile Include="Drop.cpp" />
+    <ClCompile Include="DropEntity.cpp" />
     <ClCompile Include="EffectEngine.cpp" />
     <ClCompile Include="EffectService.cpp" />
     <ClCompile Include="EffectZone.cpp" />
+    <ClCompile Include="EnchantContract.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="EntityService.cpp" />
     <ClCompile Include="EquipmentSet.cpp" />
@@ -267,6 +273,7 @@
     <ClCompile Include="Inventory.cpp" />
     <ClCompile Include="InventoryService.cpp" />
     <ClCompile Include="InventorySlot.cpp" />
+    <ClCompile Include="ItemEntity.cpp" />
     <ClCompile Include="LevelingService.cpp" />
     <ClCompile Include="Listener.cpp" />
     <ClCompile Include="main.cpp" />
@@ -325,6 +332,7 @@
     <ClCompile Include="RSkillLearnList.cpp" />
     <ClCompile Include="RSimpleTipRepeatCheck.cpp" />
     <ClCompile Include="RSkillLearnRequest.cpp" />
+    <ClCompile Include="RSocial.cpp" />
     <ClCompile Include="RStartSkill.cpp" />
     <ClCompile Include="RStrEvaluateList.cpp" />
     <ClCompile Include="RTradeBrokerHighestItemLevel.cpp" />
@@ -332,6 +340,7 @@
     <ClCompile Include="RUnequipItem.cpp" />
     <ClCompile Include="RUnionSummary.cpp" />
     <ClCompile Include="RUpdateContentsPlayTime.cpp" />
+    <ClCompile Include="RUseItem.cpp" />
     <ClCompile Include="RVisitNewSection.cpp" />
     <ClCompile Include="SCheckVersion.cpp" />
     <ClCompile Include="SendPacket.cpp" />
@@ -357,6 +366,7 @@
     <ClInclude Include="AbnormalitiesService.h" />
     <ClInclude Include="AbnormalityEffect.h" />
     <ClInclude Include="AbnormalityEnums.h" />
+    <ClInclude Include="BindContract.h" />
     <ClInclude Include="CombatManager.h" />
     <ClInclude Include="Account.hpp" />
     <ClInclude Include="Area.h" />
@@ -366,6 +376,10 @@
     <ClInclude Include="ChatSystem.h" />
     <ClInclude Include="Client.hpp" />
     <ClInclude Include="Climb.h" />
+    <ClInclude Include="Contract.h" />
+    <ClInclude Include="ContractEnum.h" />
+    <ClInclude Include="ContractManager.h" />
+    <ClInclude Include="ContractService.h" />
     <ClInclude Include="CraftingSystem.h" />
     <ClInclude Include="Creature.h" />
     <ClInclude Include="CreatureEnum.h" />
@@ -375,9 +389,11 @@
     <ClInclude Include="Crypt\TeraCrypt.hpp" />
     <ClInclude Include="Crypt\utils.hpp" />
     <ClInclude Include="Drop.h" />
+    <ClInclude Include="DropEntity.h" />
     <ClInclude Include="EffectEngine.h" />
     <ClInclude Include="EffectService.h" />
     <ClInclude Include="EffectZone.h" />
+    <ClInclude Include="EnchantContract.h" />
     <ClInclude Include="Entity.h" />
     <ClInclude Include="EntityService.h" />
     <ClInclude Include="EquipmentSet.h" />
@@ -391,6 +407,7 @@
     <ClInclude Include="Inventory.h" />
     <ClInclude Include="InventoryService.h" />
     <ClInclude Include="InventorySlot.h" />
+    <ClInclude Include="ItemEntity.h" />
     <ClInclude Include="ItemEnum.h" />
     <ClInclude Include="LevelingService.h" />
     <ClInclude Include="Listener.hpp" />
@@ -452,6 +469,7 @@
     <ClInclude Include="RSkillLearnList.h" />
     <ClInclude Include="RSimpleTipRepeatCheck.h" />
     <ClInclude Include="RSkillLearnRequest.h" />
+    <ClInclude Include="RSocial.h" />
     <ClInclude Include="RStartSkill.h" />
     <ClInclude Include="RStrEvaluateList.h" />
     <ClInclude Include="RTradeBrokerHighestItemLevel.h" />
@@ -459,6 +477,7 @@
     <ClInclude Include="RUnequipItem.h" />
     <ClInclude Include="RUnionSummary.h" />
     <ClInclude Include="RUpdateContentsPlayTime.h" />
+    <ClInclude Include="RUseItem.h" />
     <ClInclude Include="RVisitNewSection.h" />
     <ClInclude Include="SCheckVersion.h" />
     <ClInclude Include="SendPacket.h" />

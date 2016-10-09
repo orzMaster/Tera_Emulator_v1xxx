@@ -11,15 +11,21 @@ SLoginArbiter::SLoginArbiter() :SendPacket(C_LOGIN_ARBITER)
 }
 void SLoginArbiter::Process(OpCode opCode, Stream * stream, Client * caller) const
 {
-	if (caller->IsLoggedIn())
-	{
-		caller->Close();
-		return;
-	}
 	short nameOffset = stream->ReadInt16();
 	short ticketOffset = stream->ReadInt16();
 	short ticketBytesCount = stream->ReadInt16();
 
+	int unk1 = stream->ReadInt32();
+	byte unk2 = stream->ReadByte();
+	int unk3 = stream->ReadInt32();
+	int patchVersion = stream->ReadInt32();
+
+	if (patchVersion != CLIENT_VERSION)
+	{
+		caller->Close();
+		return;
+	}
+	caller->_clientVerision = patchVersion;
 
 	byte* ticket = new byte[ticketBytesCount];
 	stream->_pos = ticketOffset;
@@ -29,6 +35,14 @@ void SLoginArbiter::Process(OpCode opCode, Stream * stream, Client * caller) con
 	std::string username = stream->ReadUTF16StringBigEdianToASCII();
 	std::string password = std::string((char*)ticket, 32); 
 	password += '\0';
+	
+	stream->Clear();
+	stream->WriteInt16(5);
+	stream->WriteInt16(S_CHECK_VERSION);
+	stream->WriteByte(1);
+	caller->Send(stream);
+	stream->Clear();
+	
 
 	Account * a = nullptr;
 	if (!(a = PlayerService::PerformAccountLogin(username.c_str(), password.c_str())))
@@ -36,7 +50,7 @@ void SLoginArbiter::Process(OpCode opCode, Stream * stream, Client * caller) con
 		caller->Close();
 		return;
 	}
-	if (a->_owner != nullptr)
+	if (a->_owner)
 	{
 		Player * pp = nullptr;
 		if ((pp = a->_owner->GetSelectedPlayer()))
@@ -48,7 +62,7 @@ void SLoginArbiter::Process(OpCode opCode, Stream * stream, Client * caller) con
 			short namePos = stream->NextPos();
 			short textPos = stream->NextPos();
 
-			stream->WriteInt32(SYSTEM_CHAT);
+			stream->WriteInt32(MAIN_CHAT);
 			stream->WriteInt32(a->_owner->GetSelectedPlayer()->_entityId);
 			stream->WriteInt32(a->_owner->GetSelectedPlayer()->_subId);
 
@@ -79,23 +93,20 @@ void SLoginArbiter::Process(OpCode opCode, Stream * stream, Client * caller) con
 
 	caller->LoginClient(a);
 	stream->Clear();
-	stream->WriteInt16(0);
+	stream->WriteInt16(5);
 	stream->WriteInt16(S_LOADING_SCREEN_CONTROL_INFO);
-	stream->WriteByte(0);//unk
-	stream->WritePos(0);
+	stream->WriteByte(0);
 	caller->Send(stream);
 	stream->Clear();
 
-	stream->WriteInt16(0);
+	stream->WriteInt16(12);
 	stream->WriteInt16(S_REMAIN_PLAY_TIME);
-	stream->WriteInt32(6); //unk
-	stream->WriteInt32(0); //unk
-	stream->WritePos(0);
+	stream->WriteInt32(6);
+	stream->WriteInt32(0);
 	caller->Send(stream);
 	stream->Clear();
 
-
-	stream->WriteInt16(0);
+	stream->WriteInt16(23);
 	stream->WriteInt16(S_LOGIN_ARBITER);
 	stream->WriteInt32(1);
 	stream->WriteInt32(0);
@@ -103,15 +114,14 @@ void SLoginArbiter::Process(OpCode opCode, Stream * stream, Client * caller) con
 	stream->WriteInt32(6);
 	stream->WriteInt32(0);
 	stream->WriteByte(0);
-	stream->WritePos(0);
 	caller->Send(stream);
 	stream->Clear();
 
 	stream->WriteInt16(0);
 	stream->WriteInt32(S_LOGIN_ACCOUNT_INFO);
 	stream->WriteInt16(14); // server name offset
-	stream->WriteInt64(SERVER_ID); //???
-	stream->WriteString(SERVER_NAME);
+	stream->WriteInt64(6650346); //??? SERVER_ID??
+	stream->WriteString("PlanetMT");
 	stream->WritePos(0);
 	caller->Send(stream);
 	stream->Clear();

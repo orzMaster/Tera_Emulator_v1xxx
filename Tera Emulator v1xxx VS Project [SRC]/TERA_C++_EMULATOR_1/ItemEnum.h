@@ -73,7 +73,9 @@ enum ItemCategory : short
 	style_staff,
 	style_rod,
 	belt,
-	brooch
+	brooch,
+	customize_weapon,
+	customize_armor,
 };
 
 enum ItemResourceType : byte
@@ -170,28 +172,6 @@ enum PROFILE_SLOT_TYPE : int
 	PROFILE_SKIN_HEAD,
 
 	PROFILE_BELT = 19,
-
-	//PROFILE_WEAPON = 73,
-	//PROFILE_ARMOR = 74,
-	//PROFILE_GLOVES = 75,
-	//PROFILE_BOOTS = 76,
-	//PROFILE_RING_L = 77,
-	//PROFILE_RING_R = 78,
-	//PROFILE_EARRING_L = 79,
-	//PROFILE_EARRING_R = 80,
-	//PROFILE_NECKLACE = 81,
-	//PROFILE_BELT = 82,
-	//PROFILE_BROCH = 83,
-	//PROFILE_INNERWARE = 84,
-	//PROFILE_MASK = 86,
-	//PROFILE_HEAD_ADRONMENT = 87,
-	//
-	//PROFILE_SKIN_BODY = 88,
-	//PROFILE_SKIN_WEAPON = 89,
-	//PROFILE_SKIN_FACE = 90,
-	//PROFILE_SKIN_BACK = 91,
-	//PROFILE_SKIN_HEAD = 91
-
 };
 
 enum EquipmentPart

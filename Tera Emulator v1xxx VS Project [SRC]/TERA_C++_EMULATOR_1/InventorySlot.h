@@ -21,6 +21,7 @@ public:
 	SLOT_INFO * _info;
 
 	const bool ClearSlot();
+	const bool IsProfileSlot();
 	const bool operator << (IItem * item); //insert item intoSlot
 	const bool operator << (SLOT_INFO * info);
 	const bool operator >> (InventorySlot * slot);
@@ -56,7 +57,13 @@ public:
 		_isAwakened,
 		_isCrafted;
 
+
 	std::vector<Passivity*> _passivities;
+
+	const bool CanStack();
+	const bool Stack();
+	const bool operator ==(SLOT_INFO* inf);
+	const bool operator =(SLOT_INFO* inf);
 };
 
 

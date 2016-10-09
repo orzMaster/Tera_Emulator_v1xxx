@@ -6,6 +6,7 @@
 #include "BroadcastService.h"
 #include "Inventory.h"
 #include "ItemEnum.h"
+#include "ServerTimer.h"
 
 Account::Account() : Entity()
 {
@@ -93,25 +94,19 @@ void Account::SendPlayerList(Client * caller)
 
 	stream->WriteInt16(0);
 	stream->WriteInt16(S_GET_USER_LIST);
-
-
 	stream->WriteInt16((short)caller->GetAccount()->GetPlayerCount());
-
-	stream->WriteInt16(35); // character offset
-
+	short next = stream->NextPos();
 	stream->WriteByte(0);
 	stream->WriteInt32(0);
-	stream->WriteInt32(((int)MAX_PLAYERS_PER_ACCOUNT)); //unk
+	stream->WriteInt32(3); //unk ((int)MAX_PLAYERS_PER_ACCOUNT)
 
 	stream->WriteInt32(1);	//unk 
 	stream->WriteInt16(0);
-	stream->WriteInt32(40);//unk reaper needed level?
+	stream->WriteInt32(40);//unk
 
 
 	stream->WriteInt32(0);
 	stream->WriteInt32(24);	//unk
-
-	int location = 0; int next = 0;
 
 	for (size_t i = 0; i < _playerList.size(); i++)
 	{
@@ -119,25 +114,18 @@ void Account::SendPlayerList(Client * caller)
 		Inventory* iv = p->_inventory;
 		if (!p || p->_toDelete)
 			continue;
-
+		stream->WritePos(next);
 		stream->WriteInt16(stream->_pos);
-		next = stream->_pos;
-		stream->WriteInt16(0);	 //unk
+		next = stream->NextPos();
+	
 		stream->WriteInt32(0);
 
-		short name_pos = stream->_pos;
-		stream->WriteInt16(0);
-
-		short details1_pos = stream->_pos;
-		stream->WriteInt16(0);
+		short name_pos = stream->NextPos();
+		short details1_pos = stream->NextPos();
 		stream->WriteInt16(32);
-
-		short details2_pos = stream->_pos;
-		stream->WriteInt16(0);
+		short details2_pos = stream->NextPos();
 		stream->WriteInt16(64);
-
-		short unk_pos = stream->_pos;//guildNameOffset
-		stream->WriteInt16(0); //guildName
+		short guild_name_pos = stream->NextPos();
 
 		stream->WriteInt32(p->_lobbyId);
 
@@ -146,8 +134,8 @@ void Account::SendPlayerList(Client * caller)
 		stream->WriteInt32(p->_playerInfo->pClass);
 		stream->WriteInt32(p->_stats._level);
 
-		stream->WriteInt32(100000);//unk map id1 ? 
-		stream->WriteInt32(100000); //unk 1c050000 1308
+		stream->WriteInt32(6);//unk map id1 ? 
+		stream->WriteInt32(1231); //unk 1c050000 1308
 
 		stream->WriteInt32(p->_position->_worldMapWorldId);
 		stream->WriteInt32(p->_position->_worldMapGuardId);
@@ -158,7 +146,7 @@ void Account::SendPlayerList(Client * caller)
 		stream->WriteInt64(p->_banTimeUTC); //time until character deletion
 
 
-		stream->WriteInt32(0xA9C1BD41);
+		stream->WriteInt32(0xA817EB64);
 
 		stream->WriteInt32((*iv)[PROFILE_WEAPON]->_info->_itemId);
 		stream->WriteInt32((*iv)[PROFILE_EARRING_L]->_info->_itemId);
@@ -175,30 +163,16 @@ void Account::SendPlayerList(Client * caller)
 		stream->WriteInt32((*iv)[PROFILE_MASK]->_info->_itemId); //head
 		stream->WriteInt32((*iv)[PROFILE_HEAD_ADRONMENT]->_info->_itemId); //face
 
-
-		//stream->WriteInt32(0);
-		//stream->WriteInt32(0);
-		//stream->WriteInt32(0);
-		//stream->WriteInt32(0);
-		//stream->WriteInt32(0);
-		//stream->WriteInt32(0);
-		//stream->WriteInt32(0);
-		//stream->WriteInt32(0);
-		//stream->WriteInt32(0);
-		//stream->WriteInt32(0);
-		//stream->WriteInt32(0);
-		//stream->WriteInt32(0);
-
 		stream->Write(p->_data, 8);
 
 		stream->WriteByte(this->_isGm ? 1 : 0);//isgm
 
 		stream->WriteInt64(0);
 		stream->WriteInt32(0); //4
-		stream->WriteInt16(0); //2
+		stream->WriteByte(0); //2
 
 
-		stream->WriteInt32(0); //unk0xA85C54e6
+		stream->WriteInt32(0xA817EB64); //unk0xA85C54e6
 		stream->WriteInt64(0);
 		stream->WriteInt64(0);
 		stream->WriteInt64(0);
@@ -217,37 +191,31 @@ void Account::SendPlayerList(Client * caller)
 		stream->WriteInt32((*iv)[PROFILE_SKIN_BACK]->_info->_itemId);
 		stream->WriteInt32((*iv)[PROFILE_SKIN_WEAPON]->_info->_itemId);
 		stream->WriteInt32((*iv)[PROFILE_SKIN_BODY]->_info->_itemId);
-
-		//stream->WriteInt32(0);
-		//stream->WriteInt32(0);
-		//stream->WriteInt32(0);
-		//stream->WriteInt32(0);
-		//stream->WriteInt32(0);
-
 		stream->WriteInt32(0);
+		//stream->WriteInt32(0);
+		//stream->WriteInt32(0);
+		//stream->WriteInt32(0);
+		//stream->WriteInt32(0);
+		//stream->WriteInt32(0);
 
-		stream->WriteByte((*iv)[PROFILE_WEAPON]->_info->_enchantLevel);
-		stream->WriteByte((*iv)[PROFILE_ARMOR]->_info->_enchantLevel);
-		stream->WriteByte((*iv)[PROFILE_GLOVES]->_info->_enchantLevel);
-		stream->WriteByte((*iv)[PROFILE_BOOTS]->_info->_enchantLevel);
+		//stream->WriteByte((*iv)[PROFILE_WEAPON]->_info->_enchantLevel);
+		//stream->WriteByte((*iv)[PROFILE_ARMOR]->_info->_enchantLevel);
+		//stream->WriteByte((*iv)[PROFILE_GLOVES]->_info->_enchantLevel);
+		//stream->WriteByte((*iv)[PROFILE_BOOTS]->_info->_enchantLevel);
 
+		stream->WriteInt32(0); 
 
-		stream->WriteInt32(0); //rested
-		stream->WriteInt32(1); //restedMax
-
-		stream->WriteByte(0); //totest
-
-		stream->WriteByte(0); // newChar
-
-
+		stream->WriteInt32(55311);
+		stream->WriteInt32(55311);
+		stream->WriteByte(1);
 		stream->WriteInt32(0);
 		stream->WriteByte(0);
 
+		stream->WriteInt32(25601);
+		stream->WriteByte(0);
 
-		stream->WriteInt32(0);
+		stream->WriteInt32(30); //achievements
 
-
-		stream->WriteInt32(123); //achievements
 		stream->WriteInt32(0);
 		stream->WriteInt32(0);
 		stream->WriteInt32(0);
@@ -261,21 +229,18 @@ void Account::SendPlayerList(Client * caller)
 		stream->WritePos(details2_pos);
 		stream->Write(p->_details2, 64);
 
-		stream->WritePos(unk_pos);
+		stream->WritePos(guild_name_pos);
 		stream->WriteInt16(0);
-		stream->SetEnd();
-
-		if (_playerCount > 1)
-		{
-			stream->WritePos(next);
-		}
-
+		
 	}
 	stream->WritePos(0);
+	std::ofstream listDump = std::ofstream("C://users//narcis//desktop//list.packet");
+	listDump.write((char*)stream->_raw, stream->_size);
+	listDump.close();
+
 	caller->Send(stream);
 	stream->Clear();
 
-	SendAccountSettings(caller);
 }
 
 void Account::AddPlayer(Player * p)
@@ -307,6 +272,13 @@ const bool  Account::RemovePlayer(Player * p)
 	return false;
 }
 
+void Account::Logout()
+{
+	_owner = nullptr;
+	_selectedPlayer = nullptr;
+	_lasOnlineUtc = ServerTimer::GetCurrentUTC();
+}
+
 void Account::SendAccountSettings(Client * caller, bool broadcast)
 {
 	Stream s = Stream();
@@ -322,7 +294,6 @@ void Account::SendAccountSettings(Client * caller, bool broadcast)
 	{
 		s.WriteInt16(8);
 		s.WriteInt16(0);
-		s.WriteByte(0);
 	}
 	s.WritePos(0);
 	if (broadcast)
@@ -334,4 +305,16 @@ void Account::SendAccountSettings(Client * caller, bool broadcast)
 		caller->Send(&s);
 	}
 	s.Clear();
+}
+
+void Account::SendAccountPackageList(Client * caller, bool broadcast)
+{
+	Stream st = Stream();
+	st.WriteInt16(8);
+	st.WriteInt16(S_ACCOUNT_PACKAGE_LIST);
+	st.WriteInt32(0);
+	if (broadcast)
+		BroadcastSystem::Broadcast(caller, &st, ME, 0);
+	else
+		caller->Send(&st);
 }

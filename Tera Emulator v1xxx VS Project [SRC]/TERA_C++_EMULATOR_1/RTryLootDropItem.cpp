@@ -1,5 +1,5 @@
 #include "RTryLootDropItem.h"
-
+#include "WorldSystem.h"
 
 
 RTryLootDropItem::RTryLootDropItem() : SendPacket(C_TRY_LOOT_DROPITEM)

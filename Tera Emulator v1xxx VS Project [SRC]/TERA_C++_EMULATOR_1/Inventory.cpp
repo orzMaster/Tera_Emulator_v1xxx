@@ -5,10 +5,12 @@
 #include "ServerTimer.h"
 #include "PassivityService.h"
 #include "BroadcastService.h"
-#include "SendPacket.h"
+#include "OpCodesEnum.h"
 #include "Stream.h"
 #include "Client.hpp"
 #include "Passivity.h"
+#include "PlayerService.h"
+#include "MessagingSystem.h"
 
 Inventory::Inventory(Player * owner)
 {
@@ -76,14 +78,14 @@ const bool Inventory::ClearInventory(Client * caller)
 	{
 		if (_slots[i])
 			_slots[i]->ClearSlot();
-		
+
 	}
 
 	SendInventory(caller, 0);
 	PlayerService::SendExternalChange(caller);
 	_itemCount = _itemLevel = _profileItemLevel = 0;
 	ClearGold();
-	
+
 	return true;
 }
 
@@ -161,9 +163,37 @@ const bool Inventory::TakeGold(long long gold)
 	return true;
 }
 
-const bool Inventory::IsFull()
+InventorySlot *  Inventory::IsFull()
 {
-	return _itemCount == _slotCount;
+	for (size_t i = 20; i < _slots.size(); i++)
+	{
+		if (_slots[i]->_isEmpty == 1)
+			return _slots[i];
+	}
+
+	return nullptr;
+}
+
+SLOT_INFO const * Inventory::HasItem(int itemId)
+{
+	std::lock_guard<std::mutex> lock(_invLock);
+	for (size_t i = 0; i < _slots.size(); i++)
+	{
+		if (_slots[i] && _slots[i]->_id > 20 && _slots[i]->_info->_itemId == itemId)
+			return _slots[i]->_info;
+	}
+	return nullptr;
+}
+
+const int Inventory::HasSlot(SLOT_INFO * slot)
+{
+	std::lock_guard<std::mutex> lock(_invLock);
+	for (size_t i = 0; i < _slots.size(); i++)
+	{
+		if (_slots[i] && _slots[i]->_id > 20 && (*_slots[i]->_info) == slot)
+				return _slots[i]->_id;
+	}
+	return -1;
 }
 
 void Inventory::ClearGold()
@@ -291,7 +321,6 @@ void Inventory::Sort()
 
 InventorySlot * Inventory::operator[](int j)
 {
-	std::lock_guard<std::mutex> lock(_invLock);
 	for (size_t i = 0; i < _slots.size(); i++)
 	{
 		if (_slots[i] && _slots[i]->_id == j)
@@ -300,7 +329,7 @@ InventorySlot * Inventory::operator[](int j)
 	return nullptr;
 }
 
-InventorySlot * Inventory::operator[](long long uid)
+InventorySlot * Inventory::operator[](long uid)
 {
 	std::lock_guard<std::mutex> lock(_invLock);
 	for (size_t i = 0; i < _slots.size(); i++)
@@ -341,6 +370,39 @@ void Inventory::operator<<(int itemId)
 			}
 		}
 	}
+	RecalculateLevels();
+}
+
+void Inventory::operator<<(SLOT_INFO * slotInfo)
+{
+	std::lock_guard<std::mutex> lock(_invLock);
+	int hasItem = -1;
+
+	for (size_t i = 0; i < _slots.size(); i++)
+	{
+		if (_slots[i] && _slots[i]->_id > 20 && _slots[i]->_info == slotInfo && _slots[i]->_info->Stack())
+		{
+			hasItem = i;
+			break;
+		}
+	}
+
+	if (hasItem < 0)
+	{
+		for (size_t i = 0; i < _slots.size(); i++)
+		{
+			if (_slots[i] && _slots[i]->_id > 20 && _slots[i]->_isEmpty == 1)
+			{
+				if ((*_slots[i]->_info) = slotInfo)
+				{
+					_slots[i]->_isEmpty = 0;
+					_itemCount++;
+				}
+				break;
+			}
+		}
+	}
+
 	RecalculateLevels();
 }
 
@@ -626,6 +688,27 @@ void Inventory::RedoSlotsIds()
 	{
 		_slots[i]->_id = i + 1;
 	}
+}
+
+void Inventory::UseItem(Client* caller,InventorySlot * slot_1, InventorySlot * slot_2)
+{
+	if (!slot_1 && !slot_2)
+	{
+		MessagingSystem::SendSystemMessage(caller, "@30");
+	}
+	else if(slot_1 && !slot_2)
+	{
+		if (!InventoryService::UseItem(slot_1, caller))
+		{
+
+		}
+	}
+	else if (slot_1 && slot_2)
+	{
+
+	}
+
+
 }
 
 void Inventory::RecalculateLevels()

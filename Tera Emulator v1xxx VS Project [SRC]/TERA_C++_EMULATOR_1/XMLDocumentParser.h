@@ -68,6 +68,8 @@ private:
 	static std::map<std::string, ItemType> itemTypeDictionary;
 	static std::map<std::string, ItemBoundType> itemBoundTypeDictionary;
 	static std::map<std::string, EquipmentPart> equipmentPartDictionary;
+	static std::map<std::string, PlayerClass> playerClassDictionary;
+	static std::map<std::string, PlayerRace> playerRaceDictionary;
 
 	static std::map<std::string, SkillType> skillTypeDictionary;
 	static std::map<std::string, PushTarget> skillPushTargetDictionary;

@@ -18,7 +18,7 @@ void RShowItemToolTipEx::Process(OpCode opCode, Stream * data, Client * caller)c
 	short unk = data->ReadInt16();
 	short unk2 = data->ReadInt16();
 
-	long long itemUID = data->ReadInt32();
+	 long itemUID = data->ReadInt32();
 
 	data->_pos = nameOffset;
 	std::string userName = data->ReadUTF16StringBigEdianToASCII();

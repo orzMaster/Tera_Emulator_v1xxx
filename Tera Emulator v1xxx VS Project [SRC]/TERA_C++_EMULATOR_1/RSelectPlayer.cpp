@@ -13,6 +13,7 @@
 #include "Area.h"
 #include "Inventory.h"
 #include "ItemEnum.h"
+#include "StatsService.h"
 
 RSelectPlayer::RSelectPlayer() : SendPacket(C_SELECT_USER)
 {
@@ -22,27 +23,66 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)const
 {
 	int lobbyid = data->ReadInt32();
 	Player * p = caller->GetAccount()->SelectPlayer(lobbyid);
-	Inventory * iv = p->_inventory;
+	if (!p)
+	{
+		caller->Close();
+		return;
+	}
 
+
+
+	Inventory * iv = p->_inventory;
 	data->Clear();
-	data->WriteInt16(16);
+
+	data->WriteInt16(13);
 	data->WriteInt16(S_SELECT_USER);
-	data->WriteInt32(p == 0 ? 0 : 1);
-	data->WriteInt64(0);
+	data->WriteInt64(1);
+	data->WriteByte(0);
 	caller->Send(data);
 	data->Clear();
 	if (!p)
 		return;
 
-
-	GuildSystem::BrodcastGuildFlag(caller);
-	UnionSystem::SendElectionState(caller);
-
-	data->WriteInt16(8);
-	data->WriteInt16(S_ONGOING_HUNTING_EVENT_LIST);
-	data->WriteInt32(0);
+	data->WriteInt16(9);
+	data->WriteInt16(S_UPDATE_CONTENTS_ON_OFF);
+	data->WriteInt32(2);
+	data->WriteByte(0);
 	caller->Send(data);
 	data->Clear();
+
+	data->WriteInt16(9);
+	data->WriteInt16(S_UPDATE_CONTENTS_ON_OFF);
+	data->WriteInt32(3);
+	data->WriteByte(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(9);
+	data->WriteInt16(S_UPDATE_CONTENTS_ON_OFF);
+	data->WriteInt32(4);
+	data->WriteByte(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(9);
+	data->WriteInt16(S_UPDATE_CONTENTS_ON_OFF);
+	data->WriteInt32(8);
+	data->WriteByte(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(9);
+	data->WriteInt16(S_UPDATE_CONTENTS_ON_OFF);
+	data->WriteInt32(9);
+	data->WriteByte(0);
+	caller->Send(data);
+	data->Clear();
+	GuildSystem::BrodcastGuildFlag(caller);
+	//data->WriteInt16(8);
+	//data->WriteInt16(S_ATTENDANCE_EVENT_REWARD_COUNT);
+	//data->WriteInt32(14);
+	//caller->Send(data);
+	//data->Clear();
 
 #pragma region S_LOGIN
 
@@ -61,38 +101,35 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)const
 
 	data->WriteInt32(p->_entityId); //player id
 	data->WriteInt32(p->_subId);    //player sub id
-	data->WriteInt32(20 + SERVER_ID);	//server id
+	data->WriteInt32(SERVER_ID + 20);	//server id
 	data->WriteInt32(p->_lobbyId);  //lobby  id
 
 	data->WriteInt32(0);   //unk
 	data->WriteByte(p->_stats.GetHP() > 0 ? 1 : 0);
 	data->WriteInt32(0);   //unk
 	data->WriteInt32(50);  //unk
-	data->WriteInt32(110); //unk
+	data->WriteInt32(120); //unk
 	data->Write(p->_data, 8); //int64 data [appearance]
 
 	data->WriteInt16(1); //unk
 	data->WriteInt16(p->_stats._level);
 
-	data->WriteInt16(1);	//mining
-	data->WriteInt16(0);	//0
-	data->WriteInt16(1);	//plants 
-	data->WriteInt16(1);	//energy
+	data->WriteInt32(0);
+	data->WriteInt32(0);
 
 	data->WriteInt32(1);	//unk
+	data->WriteInt32(0);    //unk
 	data->WriteInt16(0);	//unk
 
-	data->WriteInt32(0);    //unk
-	
 	data->WriteInt64(p->_exp); //rested exp?
 	data->WriteInt64(p->_exp); //player exp
 	data->WriteInt64(840); //next level exp
 
 	data->WriteInt64(0);	//unk
 	data->WriteInt64(0);	//unk
-	data->WriteInt32(0x04BD0768); //restedCurrent
-	data->WriteInt32(0x04BD0768); //restedMax
-	data->WriteFloat(1);	//unk
+	data->WriteInt32(0); //restedCurrent
+	data->WriteInt32(0); //restedMax
+	data->WriteInt32(0);	//unk
 	data->WriteInt32(0);	//unk
 
 	data->WriteInt32((*iv)[PROFILE_WEAPON]->_info->_itemId);
@@ -103,58 +140,51 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)const
 	data->WriteInt32((*iv)[PROFILE_HEAD_ADRONMENT]->_info->_itemId);
 	data->WriteInt32((*iv)[PROFILE_MASK]->_info->_itemId);
 
-	data->WriteInt64(0x0B59F357); //creation time ?
+	data->WriteInt32(349390593); //creation time ?
+	data->WriteInt32(0);
 	data->WriteInt64(1); //unk
-	data->WriteByte(0); //unk
+
 
 	data->WriteInt32(0); //reaper? 03 00 00 00 în cazul în care 3, cuvintele "Îngerul Morții"
-	data->WriteInt32(0); 
-
+	data->WriteInt32(0);
 	data->WriteInt32(0);  // 00 00 00 00
 	data->WriteInt32(0);  // 00 00 00 00
 	data->WriteInt32(0);  // 00 00 00 00
 	data->WriteInt32(0);  // 00 00 00 00
-
 	data->WriteInt32(0);  // 00 00 00 00
 	data->WriteInt32(0);  // 00 00 00 00
 	data->WriteInt32(0);  // 00 00 00 00
 	data->WriteInt32(0);  // 00 00 00 00
-
 	data->WriteInt32(0);  // 00 00 00 00
 	data->WriteInt32(0);  // 00 00 00 00
 	data->WriteInt32(0);  // 00 00 00 00
-
 	data->WriteByte((*iv)[PROFILE_WEAPON]->_info->_enchantLevel);
 	data->WriteByte((*iv)[PROFILE_ARMOR]->_info->_enchantLevel);
 	data->WriteByte((*iv)[PROFILE_GLOVES]->_info->_enchantLevel);
 	data->WriteByte((*iv)[PROFILE_BOOTS]->_info->_enchantLevel);
-
-	data->WriteByte(0);
 	data->WriteInt32(0); // 78 00 00 00 .//karma player.get Karma ()
+
+	data->WriteInt16(0);
+	data->WriteInt16(1);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	data->WriteInt32(0);
+	data->WriteInt32(0); //unk
+
 	data->WriteByte(0);
 
-	data->WriteInt32((*iv)[PROFILE_SKIN_HEAD]->_info->_itemId);
-	data->WriteInt32((*iv)[PROFILE_SKIN_FACE]->_info->_itemId);
-	data->WriteInt32((*iv)[PROFILE_SKIN_BACK]->_info->_itemId);
-	data->WriteInt32((*iv)[PROFILE_SKIN_WEAPON]->_info->_itemId);
-	data->WriteInt32((*iv)[PROFILE_SKIN_BODY]->_info->_itemId);
-	data->WriteInt32(0); //unk
+	data->WriteInt16(0); // 00 00 00 00
+	//data->WriteInt16(1);
+	data->WriteByte(1);
+	data->WriteInt16(0);
+	data->WriteInt32(0);
+	data->WriteInt16(0);
+	data->WriteInt32(100); // 00 00 00 00
 
+	data->WriteFloat(1.0f); // 01 00 00 00
 	data->WriteInt32(0); // 00 00 00 00
-	data->WriteInt32(0); // 00 00 00 00
-	data->WriteInt32(0); // 00 00 00 00
-
-	data->WriteInt32(1); // 01 00 00 00
-	data->WriteInt32(0); // 00 00 00 00
-	data->WriteByte(0);	
-
-	data->WriteInt32(100); 
-	data->WriteFloat(1.0f);
-
-	data->WriteByte(0);	 
-	data->WriteInt32(0); 
-	 
-	data->WriteInt32(0); //unk
+	data->WriteByte(0);
 
 	data->WritePos(name_pos);
 	data->WriteString(p->_name);
@@ -164,8 +194,9 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)const
 
 	data->WritePos(details2_pos);
 	data->Write(p->_details2, 64);
-
+	data->WriteInt16(0);
 	data->WritePos(0);
+
 	caller->Send(data);
 	data->Clear();
 #pragma endregion
@@ -173,17 +204,16 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)const
 	data->WriteInt16(8);
 	data->WriteInt16(S_SHOW_NPC_TO_MAP);
 	data->WriteInt32(0);
-	//caller->Send(data);
+	caller->Send(data);
 	data->Clear();
 
 	p->_inventory->SendInventory(caller, 0,false);
 
 #pragma region S_SKILL_LIST
-	data->WriteInt16(10);
+	data->WriteInt16(8);
 	data->WriteInt16(S_SKILL_LIST);
-	data->WriteInt16(0);
-	data->WriteInt16(8);
-	data->WriteInt16(8);
+	data->WriteInt16(0); //skill count
+	data->WriteInt16(0); //next
 	caller->Send(data);
 	data->Clear();
 #pragma endregion
@@ -196,60 +226,84 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)const
 	caller->Send(data);
 	data->Clear();
 
-	data->WriteInt16(6);
+	data->WriteInt16(4);
 	data->WriteInt16(S_CLEAR_QUEST_INFO);
-	data->WriteInt16(0);
 	caller->Send(data);
 	data->Clear();
 
-	data->WriteInt16(11);
+	data->WriteInt16(9);
 	data->WriteInt16(S_DAILY_QUEST_COMPLETE_COUNT);
 	data->WriteInt16(0);
-	data->WriteInt32(20);
+	data->WriteInt16(10);
 	data->WriteByte(0);
 	caller->Send(data);
 	data->Clear();
 
 
+	short artisanSkillCount = 0;
 	data->WriteInt16(0);
 	data->WriteInt16(S_ARTISAN_SKILL_LIST);
-	data->WriteInt32(0); //count
+	data->WriteInt16(0); //skill count
+	short next_art = data->NextPos();
+
+	data->WriteInt64(0);
 	data->WriteInt16(0);
+	data->WriteByte(0);
+	data->WriteFloat(200760.0f); //production points
+	data->WriteInt16(0); //level
+
+	for (size_t i = 0; i < artisanSkillCount; i++)
+	{
+		data->WritePos(next_art);
+		data->WriteInt16(data->_pos);
+		next_art = data->NextPos();
+
+		//todo_write skill data here
+	}
+
 	data->WritePos(0);
 	caller->Send(data);
 	data->Clear();
 
-	data->WriteInt16(12);
+	data->WriteInt16(10);
 	data->WriteInt16(S_ARTISAN_RECIPE_LIST);
 	data->WriteInt32(0);
-	data->WriteInt16(256);
-	data->WriteInt16(0);
+	data->WriteByte(0);
+	data->WriteByte(1);
 	caller->Send(data);
 	data->Clear();
 
 	data->WriteInt16(0);
 	data->WriteInt16(S_NPCGUILD_LIST);
 	data->WriteInt16(0); //npc guild count [faction]
-	short unk_pos = data->_pos;
+	short next_g = data->_pos;
 
 	data->WriteInt32(p->_entityId);
 	data->WriteInt32(p->_subId);
 
-	data->WritePos(unk_pos);
-	data->WriteInt32(0); //region
-	data->WriteInt32(0); //faction
-	data->WriteInt32(0); //rank  # enum { suspicious = 0, apprehensive = 3, wavering, neutral, favorable, friendly, trusted, revered }
-	data->WriteInt32(0); //reputation
-	data->WriteInt32(0); //credits
+	for (size_t i = 0; i < 1; i++)
+	{
+		data->WritePos(next_g);
+		data->WriteInt16(data->_pos);
+		next_g = data->NextPos();
+
+		data->WriteInt32(9);
+		data->WriteInt32(610);
+		data->WriteInt32(6);
+		data->WriteInt32(0);
+		data->WriteInt32(0);
+	}
+
 	data->WritePos(0);
+	//caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(8);
+	data->WriteInt16(S_PET_INCUBATOR_INFO_CHANGE);
+	data->WriteInt32(0); //todo
 	caller->Send(data);
 	data->Clear();
 
-
-	data->WriteInt16(4);
-	data->WriteInt16(S_PET_INFO_CLEAR);
-	caller->Send(data);
-	data->Clear();
 
 	data->WriteInt16(12);
 	data->WriteInt16(S_VIRTUAL_LATENCY);
@@ -260,7 +314,7 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)const
 
 	data->WriteInt16(8);
 	data->WriteInt16(S_MOVE_DISTANCE_DELTA);
-	data->WriteFloat(200);
+	data->WriteFloat(200.0f);
 	caller->Send(data);
 	data->Clear();
 
@@ -286,40 +340,14 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)const
 
 	data->WriteInt16(28);
 	data->WriteInt16(S_MASSTIGE_STATUS);
-	data->WriteInt32(0); //D9 63 01 00
-	data->WriteInt32(0);
+	data->WriteInt64(0);
 	data->WriteInt64(0);
 	data->WriteInt64(0);
 	caller->Send(data);
 	data->Clear();
 
 
-#pragma region S_USER_ITEM_EQUIP_CHANGER
-	short nextPos = 0; int changer[] = { 1,3,4,5,6,7,8,9,10,11,19,20 };
-
-	data->WriteInt16(0);
-	data->WriteInt16(S_USER_ITEM_EQUIP_CHANGER);
-
-	data->WriteInt16(12); //count
-	nextPos = data->NextPos();
-
-	data->WriteInt32(p->_entityId);
-	data->WriteInt32(p->_subId);
-
-	for (size_t i = 0; i < 12; i++)
-	{
-		data->WritePos(nextPos);
-		data->WriteInt16(data->_pos); //base offset
-		nextPos = data->NextPos();
-		data->WriteInt64(changer[i]);
-	}
-
-	data->WritePos(0);
-	caller->Send(data);
-	data->Clear();
-#pragma endregion
 #pragma region S_USER_EXTERNAL_CHANGE
-	//equiped items
 	data->WriteInt16(0);
 	data->WriteInt16(S_USER_EXTERNAL_CHANGE);
 
@@ -363,12 +391,36 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)const
 	caller->Send(data);
 	data->Clear();
 #pragma endregion
+#pragma region S_USER_ITEM_EQUIP_CHANGER
+	short nextPos = 0; int changer[] = { 1,3,4,5,6,7,8,9,10,11,19,20 };
 
-	data->WriteInt16(10);
+	data->WriteInt16(0);
+	data->WriteInt16(S_USER_ITEM_EQUIP_CHANGER);
+
+	data->WriteInt16(12); //count
+	nextPos = data->NextPos();
+
+	data->WriteInt32(p->_entityId);
+	data->WriteInt32(p->_subId);
+
+	for (size_t i = 0; i < 12; i++)
+	{
+		data->WritePos(nextPos);
+		data->WriteInt16(data->_pos); //base offset
+		nextPos = data->NextPos();
+		data->WriteInt64(changer[i]);
+	}
+
+	data->WritePos(0);
+	caller->Send(data);
+	data->Clear();
+#pragma endregion
+
+
+
+	data->WriteInt16(8);
 	data->WriteInt16(S_FESTIVAL_LIST);
-	data->WriteInt16(0);//count
-	data->WriteInt16(8);
-	data->WriteInt16(8);
+	data->WriteInt32(0);
 	caller->Send(data);
 	data->Clear();
 
@@ -397,30 +449,65 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)const
 	caller->Send(data);
 	data->Clear();
 
+	UnionSystem::SendElectionState(caller);
+
 	data->WriteInt16(16);
 	data->WriteInt16(S_SEND_USER_PLAY_TIME);
-	data->WriteInt32(p->_lastOnlineUTC);
-	data->WriteInt64(0);
-	caller->Send(data);
-	data->Clear();
-
-
-	data->WriteInt16(6);
-	data->WriteInt16(S_CLEAR_WORLD_QUEST_VILLAGER_INFO);
-	data->WriteInt16(0);
+	data->WriteInt32(1482); //todo [OnlineTime] [24 minutes and 42 seconds]
+	data->WriteInt64(p->_lastOnlineUTC);
 	caller->Send(data);
 	data->Clear();
 
 	data->WriteInt16(12);
 	data->WriteInt16(S_PCBANGINVENTORY_DATALIST);
 	data->WriteInt64(0);
+	//caller->Send(data);
+	data->Clear();
+
+
+	data->WriteInt16(4);
+	data->WriteInt16(S_CLEAR_WORLD_QUEST_VILLAGER_INFO);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(8);
+	data->WriteInt16(S_WORLD_QUEST_VILLAGER_INFO);
+	data->WriteInt32(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(8);
+	data->WriteInt16(S_COMPLETED_MISSION_INFO);
+	data->WriteInt16(0); //count
+	data->WriteInt16(0); //next
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(9);
+	data->WriteInt16(S_DAILY_QUEST_COMPLETE_COUNT);
+	data->WriteInt16(0);
+	data->WriteInt16(10);
+	data->WriteByte(0);
+	caller->Send(data);
+	data->Clear();
+
+	data->WriteInt16(58);
+	data->WriteInt16(S_AVAILABLE_EVENT_MATCHING_LIST);
+	data->WriteInt64(0); //unk
+	data->WriteInt64(0); //unk
+	data->WriteInt64(0); //unk
+	data->WriteInt64(0); //unk
+	data->WriteInt64(0); //unk
+	data->WriteInt64(0); //unk
+	data->WriteInt16(0); //unk
+	data->WriteInt32(6); //unk
 	caller->Send(data);
 	data->Clear();
 
 	data->WriteInt16(12);
 	data->WriteInt16(S_FATIGABILITY_POINT);
-	data->WriteInt32(1);
-	data->WriteInt32(4000);
+	data->WriteInt32(1);		//unk
+	data->WriteInt32(4000);		//unk
 	caller->Send(data);
 	data->Clear();
 
@@ -434,6 +521,17 @@ void RSelectPlayer::Process(OpCode opCode, Stream * data, Client * caller)const
 	caller->Send(data);
 	data->Clear();
 
+	p->_inventory->SendInventory(caller, 0, false);
+
+	data->WriteInt16(8);
+	data->WriteInt16(S_ATTENDANCE_EVENT_REWARD_COUNT);
+	data->WriteInt32(0); //count?
+	caller->Send(data);
+	data->Clear();
+
+	PlayerService::SendExternalChange(caller, false, false);
+
+	p->_inventory->SendInventory(caller, 0, false);
 }
 
 

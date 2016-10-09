@@ -8,6 +8,10 @@
 #include "Drop.h"
 #include "ChatEnum.h"
 #include "OpCodesEnum.h"
+#include "Server.hpp"
+
+#include <fstream>
+#include <ostream>
 
 BroadcastSystem::BroadcastSystem()
 {
@@ -126,8 +130,7 @@ const bool BroadcastSystem::BroadcastDespawnPlayer(Client * caller, int entityid
 {
 	if (caller)
 	{
-		long long *id = new long long;
-		(*id) = (long long)(entityid << 32 | subId);
+		int *id = new int[2]{ entityid,subId };
 		void** args = new void*{ id };
 
 		_instance->_toSendSpawnDespawnList.push(new ToSendPacket(caller, nullptr, PLAYER_DESPAWN, false, args));
@@ -166,7 +169,6 @@ void BroadcastSystem::Main(BroadcastSystem * instance)
 				}break;
 				case ME_VISIBLE_CLIENTS:
 				{
-
 					packet->_callerClient->Send(packet->_data);
 					packet->_callerClient->SendToVisibleClients(packet->_data);
 				}break;
@@ -184,11 +186,7 @@ void BroadcastSystem::Main(BroadcastSystem * instance)
 							if (packet->_callerClient->_visibleClients[i])
 								packet->_callerClient->_visibleClients[i]->Send(packet->_data);
 						}
-
-
-						packet->_callerClient->Send(packet->_data->_raw, packet->_data->_size);//send to us to
-
-
+						packet->_callerClient->Send(packet->_data->_raw, packet->_data->_size);
 
 					}break;
 					case PARTY_CHAT:
@@ -349,8 +347,8 @@ void BroadcastSystem::SpawnDespawnMain(BroadcastSystem * instance)
 					short details2Pos = data.NextPos();
 					data.WriteInt16(64);
 
-					data.WriteInt32(0);
-					data.WriteInt32(packet->_callerClient->GetAccount()->_entityId);
+					data.WriteInt32(SERVER_ID + SERVER_VERSION);
+					data.WriteInt32(toSpawn->GetAccount()->_entityId);
 					data.WriteInt32(p->_entityId);
 					data.WriteInt32(p->_subId);
 
@@ -360,15 +358,16 @@ void BroadcastSystem::SpawnDespawnMain(BroadcastSystem * instance)
 					data.WriteFloat(p->_position->_Z);
 					data.WriteInt16(p->_position->_heading);
 
-					data.WriteInt32(0); //relation ?? enemy / party member ...
+					data.WriteInt32(1); //relation ?? enemy / party member ... { 1 = 0 = neutral , 2=party member 3 = enemy, 4 = [orange title?],5 =enemy2?, 6 =[title darker], 7=raid leader? 8=enemye3?,
+												//9 =raid leader?, [light blue] 10=[green title]?, 11=raid leader?, 12 =[DARKx2 title]?, 13=[DARKx2 title]?, 14=1? [...] }
 					data.WriteInt32(p->_model);
-					data.WriteInt16(0); //allawys 0?
-					data.WriteInt16(70); //unk2
-					data.WriteInt16(170); //unk3
+					data.WriteInt16(0); //unk
+					data.WriteInt16(50); //unk2 was 70
+					data.WriteInt16(65); //unk3 was 170
 					data.WriteInt16(0); //unk4 allways 0?
-					data.WriteInt16(0); //unk5 0-3 ?
+					data.WriteInt16(0); //player state { 0 = 1= noncombat ,2 = inCombat ,3 = onMount }
 
-					data.WriteByte(1);
+					data.WriteByte(1); //visible
 					data.WriteByte(p->_stats.GetHP() > 0 ? 1 : 0); //alive
 
 					data.Write(p->_data, 8);
@@ -382,19 +381,16 @@ void BroadcastSystem::SpawnDespawnMain(BroadcastSystem * instance)
 					data.WriteInt32((*iv)[PROFILE_MASK]->_info->_itemId); //head
 					data.WriteInt32((*iv)[PROFILE_HEAD_ADRONMENT]->_info->_itemId); //face
 
-					data.WriteInt32(0); //unk 0-1-3 ??
+					data.WriteInt32(1); //unk 0-1-3 ??
 					data.WriteInt32(0); //mount...
 					data.WriteInt32(7); //7 ???
 					data.WriteInt32(0); // Title id
 
 					data.WriteInt64(0);
-
 					data.WriteInt64(0);
 					data.WriteInt64(0);
-
 					data.WriteInt64(0);
 					data.WriteInt64(0);
-
 					data.WriteInt64(0);
 					data.WriteInt64(0);
 
@@ -407,38 +403,34 @@ void BroadcastSystem::SpawnDespawnMain(BroadcastSystem * instance)
 					data.WriteByte((*iv)[PROFILE_GLOVES]->_info->_enchantLevel);
 					data.WriteByte((*iv)[PROFILE_BOOTS]->_info->_enchantLevel);
 
-					data.WriteByte(0);
-					data.WriteByte(0);
+					data.WriteByte(0);//pixie
+					data.WriteByte(0); //second aggro [blue]
 
 					data.WriteInt16(p->_stats._level);
 					data.WriteInt16(0);   //always 0?
 					data.WriteInt32(0);   //always 0?
 
 					data.WriteInt32(0);
-					data.WriteByte(1); //unk boolean?
+					data.WriteByte(0); //unk boolean?
 
-					data.WriteInt32(0);	//skins ?
-					data.WriteInt32(0);	//skins ?
-					data.WriteInt32(0);	//skins ?
-					data.WriteInt32(0);	//skins ?
-					data.WriteInt32(0);	//skins ?
+					data.WriteInt32((*iv)[PROFILE_SKIN_HEAD]->_info->_itemId);
+					data.WriteInt32((*iv)[PROFILE_SKIN_FACE]->_info->_itemId);
+					data.WriteInt32((*iv)[PROFILE_SKIN_BACK]->_info->_itemId);
+					data.WriteInt32((*iv)[PROFILE_SKIN_WEAPON]->_info->_itemId);
+					data.WriteInt32((*iv)[PROFILE_SKIN_BODY]->_info->_itemId);
 					data.WriteInt32(0); //costumeDye # ?
 
 					data.WriteInt32(0);
 					data.WriteInt32(0);
 
-					data.WriteByte(1); //boolean?
-
-					data.WriteInt32(1); //aliance
-					data.WriteInt32(100);
+					data.WriteByte(1); //boolean? was 1
+					
+					data.WriteInt32(0); 
 					data.WriteInt32(0);
-					data.WriteInt32(256001);
-					data.WriteInt32(0);
+					data.WriteInt32(0); //unk was 0
 
-					data.WriteByte(1); //boolean?
-					data.WriteInt32(100);
-
-					data.WriteFloat(1); //allways 1.0f?
+					data.WriteByte(0); //aliance
+					data.WriteFloat(1.0f); //scale
 
 					data.WritePos(namePos);
 					data.WriteString(p->_name);
@@ -465,6 +457,7 @@ void BroadcastSystem::SpawnDespawnMain(BroadcastSystem * instance)
 					packet->_callerClient->Send(&data);
 					data.Clear();
 
+				
 					packet->_args[0] = nullptr;
 				}break;
 
@@ -476,16 +469,18 @@ void BroadcastSystem::SpawnDespawnMain(BroadcastSystem * instance)
 						packet->_args[0] = nullptr;
 						break;
 					}
-					long long  id = *(long long*)packet->_args[0];
+					int*  id = (int*)packet->_args[0];
 
 					data.WriteInt16(16);
 					data.WriteInt16(S_DESPAWN_USER);
-					data.WriteInt64(id);
+					data.WriteInt32(id[0]);
+					data.WriteInt32(id[1]);
 					data.WriteInt32(0);
 					packet->_callerClient->Send(&data);
 					data.Clear();
 
-					delete packet->_args[0];
+					id = nullptr;
+					delete[] packet->_args[0];
 					packet->_args[0] = nullptr;
 
 				}break;

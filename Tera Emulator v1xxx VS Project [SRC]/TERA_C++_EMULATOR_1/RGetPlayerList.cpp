@@ -10,11 +10,62 @@ RGetPlayerList::RGetPlayerList() : SendPacket(C_GET_USER_LIST)
 
 }
 
-void RGetPlayerList::Process(OpCode opCode, Stream * stream, Client * caller)const
+void RGetPlayerList::Process(OpCode opCode, Stream * data, Client * caller)const
 {
 	Account * a = caller->GetAccount();
 	if (a)
+	{
 		a->SendPlayerList(caller);
+		a->SendAccountSettings(caller, false);
+		a->SendAccountPackageList(caller, false);
+
+		data->Clear();
+		data->WriteInt16(17);
+		data->WriteInt16(S_CONFIRM_INVITE_CODE_BUTTON);
+		data->WriteInt32(15);
+		data->WriteInt32(0);
+		data->WriteInt32(0);
+		data->WriteByte(0);
+		caller->Send(data);
+		data->Clear();
+
+		data->WriteInt16(9);
+		data->WriteInt16(S_UPDATE_CONTENTS_ON_OFF);
+		data->WriteInt32(2);
+		data->WriteByte(0);
+		caller->Send(data);
+		data->Clear();
+
+		data->WriteInt16(9);
+		data->WriteInt16(S_UPDATE_CONTENTS_ON_OFF);
+		data->WriteInt32(3);
+		data->WriteByte(0);
+		caller->Send(data);
+		data->Clear();
+
+		data->WriteInt16(9);
+		data->WriteInt16(S_UPDATE_CONTENTS_ON_OFF);
+		data->WriteInt32(4);
+		data->WriteByte(0);
+		caller->Send(data);
+		data->Clear();
+
+		data->WriteInt16(9);
+		data->WriteInt16(S_UPDATE_CONTENTS_ON_OFF);
+		data->WriteInt32(8);
+		data->WriteByte(0);
+		caller->Send(data);
+		data->Clear();
+
+		data->WriteInt16(9);
+		data->WriteInt16(S_UPDATE_CONTENTS_ON_OFF);
+		data->WriteInt32(9);
+		data->WriteByte(0);
+		caller->Send(data);
+		data->Clear();
+	}
+	else
+		caller->Close();
 }
 
 //000000005D 01710120

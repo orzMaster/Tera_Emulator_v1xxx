@@ -5,12 +5,14 @@
 #include "ItemEnum.h"
 #include "MessagingSystem.h"
 #include "StatsService.h"
+#include "PlayerService.h"
 
 
 REquipItem::REquipItem() : SendPacket(C_EQUIP_ITEM)
 {
 
 }
+
 void REquipItem::Process(OpCode opCode, Stream * data, Client * caller)const
 {
 	Player * p = caller->GetSelectedPlayer();
@@ -28,11 +30,40 @@ void REquipItem::Process(OpCode opCode, Stream * data, Client * caller)const
 	{
 		if (slot->_info->_isBinded == 1 && slot->_info->_binderEntityId != p->_entityId)
 		{
-			MessagingSystem::SendSystemMessage(caller, "That item is not bound to you!");
+			MessagingSystem::SendSystemMessage(caller, "@347");
+			return;
+		}
+		else if (slot->_info->_item->_category == weaponComponent)
+		{
+
+		}
+
+		IItem* item = slot->_info->_item;
+		if (item->_requiredLevel > p->_stats._level)
+		{
+			MessagingSystem::SendSystemMessage(caller, "@29");
 			return;
 		}
 
-		//add level restriction and more
+		if (item->_useOnlyByClass)
+		{
+			bool can = false;
+			for (size_t i = 0; i < item->_requiredClasses.size(); i++)
+			{
+				if (item->_requiredClasses[i] == p->_playerInfo->pClass)
+				{
+					can = true;
+					break;
+				}
+			}
+			if (!can)
+			{
+				MessagingSystem::SendSystemMessage(caller, "@28");
+				return;
+			}
+		}
+
+		
 
 		ItemType type = slot->_info->_item->_type;
 		switch (type)
@@ -84,7 +115,6 @@ void REquipItem::Process(OpCode opCode, Stream * data, Client * caller)const
 			break;
 		case EQUIP_WEAPON:
 			(*(*p->_inventory)[PROFILE_WEAPON]) ^ slot;
-			MessagingSystem::SendSystemMessage(caller, "Switched");
 			break;
 		case EQUIP_ARMOR_BODY:
 			(*(*p->_inventory)[PROFILE_ARMOR]) ^ slot;
@@ -118,7 +148,7 @@ void REquipItem::Process(OpCode opCode, Stream * data, Client * caller)const
 			break;
 		}
 
-	
+		
 
 	}
 

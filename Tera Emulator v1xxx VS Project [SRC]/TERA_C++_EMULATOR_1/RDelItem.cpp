@@ -1,6 +1,7 @@
 #include "RDelItem.h"
 #include "Inventory.h"
 #include "InventorySlot.h"
+#include "WorldSystem.h"
 #include "IItem.h"
 
 RDelItem::RDelItem(): SendPacket(C_DEL_ITEM)
@@ -23,14 +24,18 @@ void RDelItem::Process(OpCode opCode, Stream * data, Client * caller)const
 
 	InventorySlot*  slot = (*p->_inventory)[slotOffset + 40];
 
-	if (slot)
+	if (slot && WorldSystem::DropItem(caller, slot->_info))
 	{
-		WorldSystem::DropItem(caller, slot->_info->_itemId);
-		slot->ClearSlot();
+		slot->_info = nullptr;
+		slot->_info = new SLOT_INFO();
+		slot->_isEmpty = 1;
+
 		p->_inventory->_itemCount--;
 		p->_inventory->SendInventory(caller, 0);
 	}
 }
+
+
 //data->Clear();
 //data->WriteInt16(0);
 //data->WriteInt16(S_SPAWN_DROPITEM);

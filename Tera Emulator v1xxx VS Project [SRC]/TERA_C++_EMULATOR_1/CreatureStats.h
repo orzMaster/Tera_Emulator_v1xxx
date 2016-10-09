@@ -9,7 +9,7 @@
 #define STAMINA_GOOD_MP 120
 
 
-struct CreatureStats
+class CreatureStats
 {
 	friend class Creature;
 	friend class RChat;

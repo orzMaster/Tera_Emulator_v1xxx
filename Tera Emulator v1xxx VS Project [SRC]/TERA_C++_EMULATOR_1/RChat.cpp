@@ -9,6 +9,9 @@
 #include "PassivityService.h"
 #include "PassivitySystem.h"
 #include "StatsService.h"
+#include "WorldSystem.h"
+#include "BroadcastService.h"
+#include "PlayerService.h"
 
 RChat::RChat() : SendPacket(C_CHAT)
 {
@@ -50,12 +53,22 @@ void RChat::Process(OpCode opCode, Stream * data, Client * caller) const
 
 			return;
 		}
+		if (ServerUtils::StringStartsWith(message, "./spme"))
+		{
+			//BroadcastSystem::BroadcastSpawnPlayer(caller, caller);
+		}
 		else if (ServerUtils::StringStartsWith(message, "./setlevel"))
 		{
 			int level = 0;
 			sscanf_s(message.c_str(), "./setlevel %d", &level);
 			p->_stats._level = level;
-			StatsService::SendPlayerStats(caller);
+			StatsService::SendPlayerStats(caller,true);
+		}
+		else if (ServerUtils::StringStartsWith(message, "./setexp"))
+		{
+			int exp = 0;
+			sscanf_s(message.c_str(), "./setexp %d", &exp);
+
 		}
 		else if (ServerUtils::StringStartsWith(message, "./setmovespeed"))
 		{
@@ -108,6 +121,10 @@ void RChat::Process(OpCode opCode, Stream * data, Client * caller) const
 			sscanf_s(message.c_str(), "./drop %d", &itemId);
 
 			WorldSystem::DropItem(caller, itemId);
+		}
+		if (ServerUtils::StringStartsWith(message, "./savedb"))
+		{
+			PlayerService::UpdateAccountData(caller->GetAccount());
 		}
 		else if (ServerUtils::StringStartsWith(message, "./rf"))
 		{

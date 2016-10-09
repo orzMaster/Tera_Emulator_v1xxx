@@ -10,7 +10,7 @@
 #include "Inventory.h"
 #include "BroadcastService.h"
 
-CreatureStats * StatsService::GetCreatureBaseStats(Creature * creaturebool )
+CreatureStats * StatsService::GetCreatureBaseStats(Creature * creaturebool)
 {
 	CreatureStats * stats = new CreatureStats();
 	return stats;
@@ -185,7 +185,7 @@ void StatsService::GetPlayerStartStats(Player* p)
 		p->_stats._naturalHpRegen = 0;
 		p->_stats._naturalMpRegen = 10;
 		p->_stats._combatHpRegen = 0;
-		p->_stats._combatMpRegen =10;
+		p->_stats._combatMpRegen = 10;
 		break;
 	case MYSTIC:
 		p->_stats._power = 35;
@@ -315,8 +315,8 @@ void StatsService::GetPlayerStartStats(Player* p)
 	p->_stats.Refresh();
 }
 
-void StatsService::SendPlayerStats(Client * c, bool broadcast)
- {
+void StatsService::SendPlayerStats(Client * c, bool sendToVisible, bool broadcast)
+{
 	Player * p = c->GetSelectedPlayer();
 	if (!p)
 		return;
@@ -325,7 +325,7 @@ void StatsService::SendPlayerStats(Client * c, bool broadcast)
 
 	Stream  *data = new Stream();
 	data->WriteInt16(0);
-	data->WriteInt16(S_PLAYER_STAT_UPDATE); 
+	data->WriteInt16(S_PLAYER_STAT_UPDATE);
 
 	data->WriteInt32(stats._currentHp); //ACTUAL hp
 	data->WriteInt32(stats._currentMp); //ACTUAL mp
@@ -382,7 +382,7 @@ void StatsService::SendPlayerStats(Client * c, bool broadcast)
 	data->WriteByte(0); //alive / combat ?
 
 	data->WriteInt32(stats._staminaHp);	 //aditioanl stamina hp
-	data->WriteInt32(stats._staminaMp );	 //aditioanl stamina mp
+	data->WriteInt32(stats._staminaMp);	 //aditioanl stamina mp
 	data->WriteInt32(stats._currentStamina);	 //stamina?
 	data->WriteInt32(stats._maxStamina);	 //max stamina?
 
@@ -404,9 +404,16 @@ void StatsService::SendPlayerStats(Client * c, bool broadcast)
 	data->WritePos(0);
 
 	if (broadcast)
-		BroadcastSystem::Broadcast(c, data, ME, 0);
+		if (sendToVisible)
+			BroadcastSystem::Broadcast(c, data, ME_VISIBLE_CLIENTS, 0);
+		else
+			BroadcastSystem::Broadcast(c, data, ME, 0);
 	else
+	{
+		if (sendToVisible)
+			c->SendToVisibleClients(data);
 		c->Send(data);
+	}
 }
 
 void StatsService::CalculatePlayerStats(Player * p)
@@ -415,7 +422,7 @@ void StatsService::CalculatePlayerStats(Player * p)
 		return;
 
 	GetPlayerStartStats(p);
-	
+
 	PlayerClass pClass = p->_playerInfo->pClass;
 
 	switch (pClass)

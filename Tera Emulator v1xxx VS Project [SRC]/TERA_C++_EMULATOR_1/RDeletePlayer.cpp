@@ -1,4 +1,5 @@
 #include "RDeletePlayer.h"
+#include "ServerTimer.h"
 
 RDeletePlayer::RDeletePlayer() : SendPacket(C_DELETE_USER)
 {
@@ -11,7 +12,7 @@ void RDeletePlayer::Process(OpCode opCode, Stream * data, Client * caller)const
 	Player * p = caller->GetAccount()->GetPlayerByLobbyId(id);
 	if (p)
 	{
-		if (p->_stats._level > 40)
+		if (p->_stats._level > 67)
 		{
 			p->_banTimeUTC = ServerTimer::GetCurrentUTC() + 86400; //1 day
 		}

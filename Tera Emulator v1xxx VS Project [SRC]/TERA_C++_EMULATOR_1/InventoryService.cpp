@@ -2,8 +2,14 @@
 #include "Client.hpp"
 #include "Account.hpp"
 #include "Stream.h"
+#include "Player.hpp"
 #include "IItem.h"
 #include "OpCodesEnum.h"
+#include "Inventory.h"
+#include "InventorySlot.h"
+#include "CreatureStats.h"
+#include "CreatureBase.h"
+#include "MessagingSystem.h"
 
 #include "XMLDocumentParser.h"
 
@@ -21,7 +27,7 @@ const bool InventoryService::LoadItems(const char * path)
 	int fileCount = 0;
 	sscanf(line.c_str(), "Count = %d", &fileCount);
 
-	
+
 
 	file.close();
 	int itemCountNow = 0; int itemCountOld = 0;
@@ -29,10 +35,10 @@ const bool InventoryService::LoadItems(const char * path)
 	{
 		itemCountOld = _items.size();
 		ss.clear(); ss.str("");
-		ss << path << "//ItemData-" << i << ".xml" << '\0'; 
+		ss << path << "//ItemData-" << i << ".xml" << '\0';
 		std::cout << ">Loading [ItemData-" << i << ".xml]...\n";
 		if (!XMLDocumentParser::ParseItemsXMLDocument(ss.str().c_str(), _items))
-			continue; 
+			continue;
 		itemCountNow = _items.size();
 	}
 
@@ -142,6 +148,68 @@ void InventoryService::Release()
 	_items.clear();
 }
 
+const bool InventoryService::UseItem(InventorySlot * slot, Client * caller)
+{
+	if (!slot || !caller)
+		return false;
+	Player * player = caller->GetSelectedPlayer();
+	if (!player)
+		return false;
+
+	if (!slot->_isEmpty)
+	{
+		MessagingSystem::SendSystemMessage(caller, "@30");
+		return false;
+	}
+	IItem * item = slot->_info->_item;
+	if (item->_useOnlyByRace)
+	{
+		bool has = false;
+		for (size_t i = 0; i < item->_requiredRace.size(); i++)
+			if (item->_requiredRace[i] == player->_playerInfo->pRace)
+			{
+				has = true;
+				break;
+			}
+		if (!has)
+		{
+			MessagingSystem::SendSystemMessage(caller, "@27");
+			return false;
+		}
+		//todo
+	}
+	if (item->_useOnlyByClass)
+	{
+		bool can = false;
+		for (size_t i = 0; i < item->_requiredClasses.size(); i++)
+		{
+			if (item->_requiredClasses[i] == player->_playerInfo->pClass)
+			{
+				can = true;
+				break;
+			}
+		}
+		if (!can)
+		{
+			MessagingSystem::SendSystemMessage(caller, "@28");
+			return false;
+		}
+	}
+	if (player->_stats._level < item->_requiredLevel)
+	{
+		MessagingSystem::SendSystemMessage(caller, "@29");
+		return false;
+	}
+	if (item->_useOnlyTerritory)
+	{
+		MessagingSystem::SendSystemMessage(caller, "TODO useOnlyTerritory");
+		//todo
+	}
+
+
+	return false;
+}
+
 void InventoryService::ResolveInventory(std::vector<int>& ids, std::vector<IItem*>& out_items)
 {
 	for (size_t i = 0; i < ids.size(); i++)
@@ -149,7 +217,7 @@ void InventoryService::ResolveInventory(std::vector<int>& ids, std::vector<IItem
 		IItem * j = 0;
 		if (j = ResolveItem(ids[i]))
 		{
-			
+
 		}
 	}
 

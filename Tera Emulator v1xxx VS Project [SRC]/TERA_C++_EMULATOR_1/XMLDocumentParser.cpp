@@ -8,7 +8,7 @@
 #include "EquipmentSet.h"
 
 #include <string>
-
+#include "EntityService.h"
 
 const bool XMLDocumentParser::ParseAreaXMLDocument(const char * fileName, std::vector<Area*>& out_items)
 {
@@ -773,6 +773,7 @@ void XMLDocumentParser::BuildItems(XMLNode * mainnode, std::vector<IItem*>& out_
 		std::cout << "::Parsed <<[" << j << "] items. Parsing speed ~[" << parsingSpeed / 2 << "] Items per second." << "\r" << std::flush;
 
 		out = new IItem();
+		memset(out, 0, sizeof IItem);
 		node = mainnode->childNodes[j];
 		for (size_t i = 0; i < node->_arguments.size(); i++)
 		{
@@ -880,13 +881,45 @@ void XMLDocumentParser::BuildItems(XMLNode * mainnode, std::vector<IItem*>& out_
 			{
 				out->_changeColorEnable = ((const char*)arg->argumentValue.c_str()) == "True" ? 1 : 0;
 			}
+			else if ((arg = node->ConsumeArgument("requiredRace")))
+			{
+				std::string chuck = "";
+				for (size_t i = 0; i < arg->argumentValue.size(); i++)
+				{
+					if (arg->argumentValue[i] == ';')
+					{
+						out->_requiredRace.push_back(playerRaceDictionary[chuck]);
+						chuck.clear();
+						continue;
+					}
+					chuck += arg->argumentValue[i];
+				}
+				if (chuck.size() > 0)
+					out->_requiredRace.push_back(playerRaceDictionary[chuck]);
+
+				out->_useOnlyByRace = 1;
+			}
 			else if ((arg = node->ConsumeArgument("boundType")))
 			{
 				out->_bountType = itemBoundTypeDictionary[(const char*)arg->argumentValue.c_str()];
 			}
 			else if ((arg = node->ConsumeArgument("requiredClass")))
 			{
-				out->_requiredClass = arg->argumentValue;
+				std::string chuck = "";
+				for (size_t i = 0; i < arg->argumentValue.size(); i++)
+				{
+					if (arg->argumentValue[i] == ';')
+					{
+						out->_requiredClasses.push_back(playerClassDictionary[chuck]);
+						chuck.clear();
+						continue;
+					}
+					chuck += arg->argumentValue[i];
+				}
+				if(chuck.size() > 0)
+					out->_requiredClasses.push_back(playerClassDictionary[chuck]);
+
+				out->_useOnlyByClass = 1;
 			}
 			else if ((arg = node->ConsumeArgument("linkMasterpiecePassivityCategoryId")))
 			{
@@ -941,6 +974,7 @@ void XMLDocumentParser::BuildItems(XMLNode * mainnode, std::vector<IItem*>& out_
 
 
 		}
+		EntityService::Add(out);
 		out_items.push_back(out);
 		parsedPerSecond++;
 	}
@@ -1325,7 +1359,7 @@ void XMLDocumentParser::BuildSkill(XMLNode * node, std::vector<Skill*> &out_skil
 		parsedPerSecond++;
 	}
 
-} 
+}
 void XMLDocumentParser::BuildAbnormality(XMLNode * mainNode, std::vector<IAbnormality*>& out_abnormalities)
 {
 	int parsedPerSecond = 0;
@@ -1665,6 +1699,8 @@ std::map<std::string, ItemCategory> XMLDocumentParser::itemCategoryDictionary;
 std::map<std::string, ItemType>  XMLDocumentParser::itemTypeDictionary;
 std::map<std::string, ItemBoundType>  XMLDocumentParser::itemBoundTypeDictionary;
 std::map<std::string, EquipmentPart> XMLDocumentParser::equipmentPartDictionary;
+std::map<std::string, PlayerClass> XMLDocumentParser::playerClassDictionary;
+std::map<std::string, PlayerRace> XMLDocumentParser::playerRaceDictionary;
 
 std::map<std::string, SkillType> XMLDocumentParser::skillTypeDictionary;
 std::map<std::string, PushTarget>	XMLDocumentParser::skillPushTargetDictionary;
@@ -1791,6 +1827,8 @@ void XMLDocumentParser::InitItemsDictionary()
 	itemCategoryDictionary.insert(std::pair<std::string, ItemCategory>("style_bow", style_bow));
 	itemCategoryDictionary.insert(std::pair<std::string, ItemCategory>("style_staff", style_staff));
 	itemCategoryDictionary.insert(std::pair<std::string, ItemCategory>("style_rod", style_rod));
+	itemCategoryDictionary.insert(std::pair<std::string, ItemCategory>("customize_wepon", customize_weapon));
+	itemCategoryDictionary.insert(std::pair<std::string, ItemCategory>("customize_armor", customize_armor));
 
 
 	equipmentPartDictionary.insert(std::pair<std::string, EquipmentPart>("BELT", E_BELT));
@@ -1809,6 +1847,27 @@ void XMLDocumentParser::InitItemsDictionary()
 	equipmentPartDictionary.insert(std::pair<std::string, EquipmentPart>("STYLE_WEAPON", E_STYLE_WEAPON));
 	equipmentPartDictionary.insert(std::pair<std::string, EquipmentPart>("STYLE_BACK", E_STYLE_BACK));
 	equipmentPartDictionary.insert(std::pair<std::string, EquipmentPart>("STYLE_HAIR", E_STYLE_HAIR));
+
+	playerClassDictionary.insert(std::pair<std::string, PlayerClass>("WARRIOR", WARRIOR));
+	playerClassDictionary.insert(std::pair<std::string, PlayerClass>("LANCER", LANCER));
+	playerClassDictionary.insert(std::pair<std::string, PlayerClass>("SLAYER", SLAYER));
+	playerClassDictionary.insert(std::pair<std::string, PlayerClass>("BERSERKER", BERSERKER));
+	playerClassDictionary.insert(std::pair<std::string, PlayerClass>("SORCERER", SORCERER));
+	playerClassDictionary.insert(std::pair<std::string, PlayerClass>("ARCHER", ARCHER));
+	playerClassDictionary.insert(std::pair<std::string, PlayerClass>("PRIEST", PRIEST));
+	playerClassDictionary.insert(std::pair<std::string, PlayerClass>("MYSTIC", MYSTIC));
+	playerClassDictionary.insert(std::pair<std::string, PlayerClass>("REAPER", REAPER));
+	playerClassDictionary.insert(std::pair<std::string, PlayerClass>("ENGINEER", ENGINEER));
+	playerClassDictionary.insert(std::pair<std::string, PlayerClass>("FIGHTER", FIGHTER));
+	playerClassDictionary.insert(std::pair<std::string, PlayerClass>("ASSASSIN", ASSASSIN));
+
+	playerRaceDictionary.insert(std::pair<std::string, PlayerRace>("HUMAN", HUMAN));
+	playerRaceDictionary.insert(std::pair<std::string, PlayerRace>("HIGHELF", HIGHELF));
+	playerRaceDictionary.insert(std::pair<std::string, PlayerRace>("AMAN", AMAN));
+	playerRaceDictionary.insert(std::pair<std::string, PlayerRace>("CASTANIC", CASTANIC));
+	playerRaceDictionary.insert(std::pair<std::string, PlayerRace>("ELIN", ELIN));
+	playerRaceDictionary.insert(std::pair<std::string, PlayerRace>("POPORI", POPORI));
+	playerRaceDictionary.insert(std::pair<std::string, PlayerRace>("BARAKA", BARAKA));
 }
 
 void XMLDocumentParser::InitPassivityDictionary()

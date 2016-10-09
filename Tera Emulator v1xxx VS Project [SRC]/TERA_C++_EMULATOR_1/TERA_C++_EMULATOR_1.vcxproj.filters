@@ -11,9 +11,6 @@
     <Filter Include="Server\Services">
       <UniqueIdentifier>{da4a6304-0f4f-4366-9d20-0fe3d6c7f71c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Server\Geo">
-      <UniqueIdentifier>{e51abb32-09eb-4cc3-b4eb-4d7f0393558e}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Main">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
@@ -102,9 +99,6 @@
     <Filter Include="Server\Services\Inventory">
       <UniqueIdentifier>{0c6ddfc5-f95c-4347-b9d3-361a7bb2237f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Server\Systems\Resources">
-      <UniqueIdentifier>{4cd7590d-6def-4e83-b34e-d3d596a930f0}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Server\Services\StatsService">
       <UniqueIdentifier>{244ff59e-3d63-42fc-8562-bcab44362e47}</UniqueIdentifier>
     </Filter>
@@ -119,6 +113,24 @@
     </Filter>
     <Filter Include="Server\Systems\BroadcastSystem\Data">
       <UniqueIdentifier>{479db900-f94e-4bcb-8ebb-1a5280dfb71d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server\Services\EntityService">
+      <UniqueIdentifier>{879480d9-d8e1-49be-a29d-16873f5e6ff8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Main\Resources">
+      <UniqueIdentifier>{4cd7590d-6def-4e83-b34e-d3d596a930f0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server\Services\ContractService">
+      <UniqueIdentifier>{ed441264-ebf9-4181-b755-a224c67e0e8a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server\Contracts">
+      <UniqueIdentifier>{22331033-b65f-4f7a-a928-ec67cba5a876}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server\OpCodeManager">
+      <UniqueIdentifier>{bedc734c-5f58-437d-baf1-c0998c006588}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Server\DataStructs\Geo">
+      <UniqueIdentifier>{e51abb32-09eb-4cc3-b4eb-4d7f0393558e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -149,9 +161,6 @@
     <ClCompile Include="Player.cpp">
       <Filter>Server\DataStructs</Filter>
     </ClCompile>
-    <ClCompile Include="OpCodes.cpp">
-      <Filter>Server\Connection</Filter>
-    </ClCompile>
     <ClCompile Include="TeraPacket.cpp">
       <Filter>Server\Connection</Filter>
     </ClCompile>
@@ -174,7 +183,7 @@
       <Filter>Server</Filter>
     </ClCompile>
     <ClCompile Include="WorldPosition.cpp">
-      <Filter>Server\Geo</Filter>
+      <Filter>Server\DataStructs\Geo</Filter>
     </ClCompile>
     <ClCompile Include="RCanCreatePlayer.cpp">
       <Filter>Server\Resolutions\Lobby</Filter>
@@ -229,12 +238,6 @@
     </ClCompile>
     <ClCompile Include="WorldObject.cpp">
       <Filter>Server\Systems\WorldSystem\SystemData</Filter>
-    </ClCompile>
-    <ClCompile Include="Entity.cpp">
-      <Filter>Server\DataStructs</Filter>
-    </ClCompile>
-    <ClCompile Include="EntityService.cpp">
-      <Filter>Server\Services</Filter>
     </ClCompile>
     <ClCompile Include="2DRectangle.cpp">
       <Filter>Server\DataStructs</Filter>
@@ -368,9 +371,6 @@
     <ClCompile Include="RRequestGameStatPing.cpp">
       <Filter>Server\Resolutions\World</Filter>
     </ClCompile>
-    <ClCompile Include="SendPacket.cpp">
-      <Filter>Server\DataStructs</Filter>
-    </ClCompile>
     <ClCompile Include="RLoadTopoFin.cpp">
       <Filter>Server\Resolutions\Lobby</Filter>
     </ClCompile>
@@ -482,6 +482,45 @@
     <ClCompile Include="Drop.cpp">
       <Filter>Server\Systems\WorldSystem\SystemData</Filter>
     </ClCompile>
+    <ClCompile Include="RUseItem.cpp">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="RSocial.cpp">
+      <Filter>Server\Resolutions\World</Filter>
+    </ClCompile>
+    <ClCompile Include="EntityService.cpp">
+      <Filter>Server\Services\EntityService</Filter>
+    </ClCompile>
+    <ClCompile Include="Entity.cpp">
+      <Filter>Server\Services\EntityService</Filter>
+    </ClCompile>
+    <ClCompile Include="DropEntity.cpp">
+      <Filter>Server\Services\EntityService</Filter>
+    </ClCompile>
+    <ClCompile Include="ItemEntity.cpp">
+      <Filter>Server\Services\EntityService</Filter>
+    </ClCompile>
+    <ClCompile Include="ContractService.cpp">
+      <Filter>Server\Services\ContractService</Filter>
+    </ClCompile>
+    <ClCompile Include="ContractManager.cpp">
+      <Filter>Server\Services\ContractService</Filter>
+    </ClCompile>
+    <ClCompile Include="Contract.cpp">
+      <Filter>Server\Services\ContractService</Filter>
+    </ClCompile>
+    <ClCompile Include="EnchantContract.cpp">
+      <Filter>Server\Contracts</Filter>
+    </ClCompile>
+    <ClCompile Include="BindContract.cpp">
+      <Filter>Server\Contracts</Filter>
+    </ClCompile>
+    <ClCompile Include="OpCodes.cpp">
+      <Filter>Server\OpCodeManager</Filter>
+    </ClCompile>
+    <ClCompile Include="SendPacket.cpp">
+      <Filter>Server\Connection</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Crypt\TeraCrypt.hpp">
@@ -498,9 +537,6 @@
     </ClInclude>
     <ClInclude Include="Account.hpp">
       <Filter>Server\DataStructs</Filter>
-    </ClInclude>
-    <ClInclude Include="OpCodes.hpp">
-      <Filter>Server\Connection</Filter>
     </ClInclude>
     <ClInclude Include="TeraPacket.hpp">
       <Filter>Server\Connection</Filter>
@@ -524,10 +560,10 @@
       <Filter>Server</Filter>
     </ClInclude>
     <ClInclude Include="WorldPosition.h">
-      <Filter>Server\Geo</Filter>
+      <Filter>Server\DataStructs\Geo</Filter>
     </ClInclude>
     <ClInclude Include="Climb.h">
-      <Filter>Server\Geo</Filter>
+      <Filter>Server\DataStructs\Geo</Filter>
     </ClInclude>
     <ClInclude Include="RCanCreatePlayer.h">
       <Filter>Server\Resolutions\Lobby</Filter>
@@ -562,9 +598,6 @@
     <ClInclude Include="ServerTimer.h">
       <Filter>Framework</Filter>
     </ClInclude>
-    <ClInclude Include="IAbnormality.h">
-      <Filter>Server\Abnormality</Filter>
-    </ClInclude>
     <ClInclude Include="AbnormalitiesService.h">
       <Filter>Server\Services</Filter>
     </ClInclude>
@@ -588,12 +621,6 @@
     </ClInclude>
     <ClInclude Include="WorldObject.h">
       <Filter>Server\Systems\WorldSystem\SystemData</Filter>
-    </ClInclude>
-    <ClInclude Include="Entity.h">
-      <Filter>Server\DataStructs</Filter>
-    </ClInclude>
-    <ClInclude Include="EntityService.h">
-      <Filter>Server\Services</Filter>
     </ClInclude>
     <ClInclude Include="2DRectangle.h">
       <Filter>Server\DataStructs</Filter>
@@ -639,9 +666,6 @@
     </ClInclude>
     <ClInclude Include="UnionSystem.h">
       <Filter>Server\Systems</Filter>
-    </ClInclude>
-    <ClInclude Include="OpCodesEnum.h">
-      <Filter>Server\Connection</Filter>
     </ClInclude>
     <ClInclude Include="RCancelDeletePlayer.h">
       <Filter>Server\Resolutions\Lobby</Filter>
@@ -706,9 +730,6 @@
     <ClInclude Include="RTradeBrokerHighestItemLevel.h">
       <Filter>Server\Resolutions\Tradebroker</Filter>
     </ClInclude>
-    <ClInclude Include="SendPacket.h">
-      <Filter>Server\DataStructs</Filter>
-    </ClInclude>
     <ClInclude Include="CraftingSystem.h">
       <Filter>Server\Systems</Filter>
     </ClInclude>
@@ -743,7 +764,7 @@
       <Filter>Server\Resolutions</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
-      <Filter>Server\Systems\Resources</Filter>
+      <Filter>Main\Resources</Filter>
     </ClInclude>
     <ClInclude Include="ChatEnum.h">
       <Filter>Server\Enums</Filter>
@@ -800,7 +821,7 @@
       <Filter>Server\Services\Inventory</Filter>
     </ClInclude>
     <ClInclude Include="Vector3.hpp">
-      <Filter>Server\Geo</Filter>
+      <Filter>Server\DataStructs\Geo</Filter>
     </ClInclude>
     <ClInclude Include="MessagingSystem.h">
       <Filter>Server\Systems</Filter>
@@ -865,15 +886,63 @@
     <ClInclude Include="Drop.h">
       <Filter>Server\Systems\WorldSystem\SystemData</Filter>
     </ClInclude>
+    <ClInclude Include="RUseItem.h">
+      <Filter>Server\Resolutions\Inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="RSocial.h">
+      <Filter>Server\Resolutions\World</Filter>
+    </ClInclude>
+    <ClInclude Include="EntityService.h">
+      <Filter>Server\Services\EntityService</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity.h">
+      <Filter>Server\Services\EntityService</Filter>
+    </ClInclude>
+    <ClInclude Include="DropEntity.h">
+      <Filter>Server\Services\EntityService</Filter>
+    </ClInclude>
+    <ClInclude Include="ItemEntity.h">
+      <Filter>Server\Services\EntityService</Filter>
+    </ClInclude>
+    <ClInclude Include="ContractService.h">
+      <Filter>Server\Services\ContractService</Filter>
+    </ClInclude>
+    <ClInclude Include="ContractManager.h">
+      <Filter>Server\Services\ContractService</Filter>
+    </ClInclude>
+    <ClInclude Include="Contract.h">
+      <Filter>Server\Services\ContractService</Filter>
+    </ClInclude>
+    <ClInclude Include="ContractEnum.h">
+      <Filter>Server\Enums</Filter>
+    </ClInclude>
+    <ClInclude Include="EnchantContract.h">
+      <Filter>Server\Contracts</Filter>
+    </ClInclude>
+    <ClInclude Include="BindContract.h">
+      <Filter>Server\Contracts</Filter>
+    </ClInclude>
+    <ClInclude Include="IAbnormality.h">
+      <Filter>Server\Abnormality</Filter>
+    </ClInclude>
+    <ClInclude Include="OpCodes.hpp">
+      <Filter>Server\OpCodeManager</Filter>
+    </ClInclude>
+    <ClInclude Include="OpCodesEnum.h">
+      <Filter>Server\Enums</Filter>
+    </ClInclude>
+    <ClInclude Include="SendPacket.h">
+      <Filter>Server\Connection</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="TERA_C++_EMULATOR_11.rc">
-      <Filter>Server\Systems\Resources</Filter>
+      <Filter>Main\Resources</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="..\..\..\..\..\Desktop\icon.ico">
-      <Filter>Server\Systems\Resources</Filter>
+      <Filter>Main\Resources</Filter>
     </Image>
   </ItemGroup>
 </Project>

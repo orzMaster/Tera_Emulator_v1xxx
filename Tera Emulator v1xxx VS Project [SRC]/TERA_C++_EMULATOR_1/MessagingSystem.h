@@ -11,5 +11,6 @@ public:
 
 	static void SendSystemMessage(Client * client, std::string message);
 	static void SendCustomSystemMessage(Client * client, std::string message);
+	static void SendLootItem(Client* caller, int itemId, int stackCount);
 };
 

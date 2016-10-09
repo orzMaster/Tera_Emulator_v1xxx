@@ -984,7 +984,7 @@ void PlayerService::SendPlayerSettings(Client * client, bool broadCast)
 	}
 }
 
-void PlayerService::ReleaseData()
+void PlayerService::Release()
 {
 	for (size_t i = 0; i < _accounts.size(); i++)
 	{
@@ -1002,10 +1002,10 @@ void PlayerService::ReleaseData()
 	_driver = nullptr;
 }
 
-void PlayerService::SendExternalChange(Client * caller, bool sendToVisivle , bool broadcast)
+void PlayerService::SendExternalChange(Client * caller, bool sendToVisivle, bool broadcast)
 {
 	Player * p = caller->GetSelectedPlayer();
-	if (!p)
+	if (!p || !p->_inventory)
 		return;
 
 	Stream * data = new Stream();
@@ -1066,6 +1066,41 @@ void PlayerService::SendExternalChange(Client * caller, bool sendToVisivle , boo
 	data->Clear();
 	delete data;
 	data = 0;
+}
+
+void PlayerService::SendVipSystemInfo(Client * caller, bool broadcast)
+{
+	Player * p = caller->GetSelectedPlayer();
+	Stream data = Stream();
+	data.WriteInt16(0);
+	data.WriteInt16(S_SEND_VIP_SYSTEM_INFO);
+	ushort next = data.NextPos();
+	data.WriteByte(1); //hasTeraRewards
+	data.WriteInt32(0); //teraRewardsValue
+	data.WriteInt32(0); //1780
+	data.WriteInt32(0);//6060
+	data.WriteInt32(0); //330
+	data.WriteInt32(0); //0
+	data.WriteByte(1); //bool? what?
+	if (p)
+	{
+		data.WriteInt32(16936 - 60);
+	}
+	else
+		data.WriteInt32(16936); // 3752
+	
+
+	data.WriteInt32(0);
+	data.WriteInt32(0);
+	data.WriteInt32(0);
+	data.WriteByte(1);
+	data.WritePos(next);
+	data.WriteInt16(0);//?
+	data.WritePos(0);
+	if (broadcast)
+		BroadcastSystem::Broadcast(caller, &data, ME, 0);
+	else
+		caller->Send(&data);
 }
 
 

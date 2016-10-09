@@ -1,5 +1,5 @@
 #include "RServerTime.h"
-
+#include "ServerTimer.h"
 
 RServerTime::RServerTime() : SendPacket(C_SERVER_TIME)
 {

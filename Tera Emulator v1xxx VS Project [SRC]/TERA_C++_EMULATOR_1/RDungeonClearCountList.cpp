@@ -8,6 +8,7 @@ RDungeonClearCountList::RDungeonClearCountList() :SendPacket(C_DUNGEON_CLEAR_COU
 
 void RDungeonClearCountList::Process(OpCode opCode, Stream * data, Client * caller)const
 {
+	return;
 	Player* p = caller->GetSelectedPlayer();
 	if (!p)
 		return;

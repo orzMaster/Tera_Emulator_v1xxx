@@ -13,9 +13,12 @@
 
 #include "mysql\MySqlDriver.h"
 
-#define SERVER_ID  4012
+#define SERVER_ID  4702
 #define SERVER_CLIENTS_DISCONNECTION_TIMEOUT 1000
 #define SERVER_NAME "Planet Gazah"
+#define CLIENT_VERSION 4702
+
+#define SERVER_VERSION 1050
 
 class Server
 {
