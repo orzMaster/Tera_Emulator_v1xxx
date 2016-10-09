@@ -37,7 +37,7 @@ This is a WIP[Work in progress].
 			-[./exit] to disconnect from server
 			-[./cleargold]
 			-[./expandinventory] expands inventory by 8 slots
-			
+			-[./clearinventory] clears the inventory and profile items
 	main server window
 		->commands:
 			-[./start] to start server
@@ -53,7 +53,8 @@ This is a WIP[Work in progress].
 			-[./cleardp] clear all drop from current arrea
 			-[./setlevel] <-
 			-[./savedb] saves all new changes to db
-		unequip/equip items works [not tested fro skins]
-		resoved inventory-profile bug.
+		unequip/equip items works [not tested for skins]
+		resolved inventory-profile bug
+		discarded items are now droped in world, not destroyed
 		
 	still a WIP, so...
