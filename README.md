@@ -37,6 +37,7 @@ This is a WIP[Work in progress].
 			-[./exit] to disconnect from server
 			-[./cleargold]
 			-[./expandinventory] expands inventory by 8 slots
+			
 	main server window
 		->commands:
 			-[./start] to start server
@@ -46,4 +47,13 @@ This is a WIP[Work in progress].
 			-[./asc] ads continentId to [toStartAreasList] [only when server is stopped , not running]
 			-[./close] close client by entityId
 
+	v1050
+		new chat commands:
+			-[./drop %itemid%] drops item in world with not owner
+			-[./cleardp] clear all drop from current arrea
+			-[./setlevel] <-
+			-[./savedb] saves all new changes to db
+		unequip/equip items works [not tested fro skins]
+		resoved inventory-profile bug.
+		
 	still a WIP, so...
