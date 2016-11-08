@@ -1,3 +1,5 @@
+## OUTDATED, LATEST SRC GIVEN BY [REQUEST AND APPROVAL]. SKYPE[balan.narcis1] E-MAIL[balan.narcis96@gmail.com].
+
 # Tera_Emulator_v1xxx
 This is a WIP[Work in progress].
 
